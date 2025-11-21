@@ -14,7 +14,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { signUp, confirmSignUp } from "aws-amplify/auth";
+import { Auth } from "aws-amplify";
 
 export default function Register() {
   const { t } = useTranslation();
@@ -43,15 +43,13 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await signUp({
+      await Auth.signUp({
         username: form.email,
         password: form.password,
-        options: {
-          userAttributes: {
-            email: form.email,
-            name: form.name,
-            'custom:user_type': form.userType
-          },
+        attributes: {
+          email: form.email,
+          name: form.name,
+          'custom:user_type': form.userType,
         },
       });
       
@@ -71,10 +69,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await confirmSignUp({
-        username: form.email,
-        confirmationCode: confirmationCode,
-      });
+      await Auth.confirmSignUp(form.email, confirmationCode);
       
       setSuccess("Email confirmed! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
