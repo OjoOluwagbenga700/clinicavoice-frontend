@@ -1,14 +1,36 @@
 import { Amplify } from "aws-amplify";
 
+// Real AWS Amplify Configuration
 const awsConfig = {
   Auth: {
     Cognito: {
-      userPoolId: "us-east-1_23cH8bX6E",
-      userPoolClientId: "7hn7q4dffj72k97der2lqe37is"
-    }
-  }
+      userPoolId: "us-east-1_7fvXVi5oM",
+      userPoolClientId: "16vaq7l91itotdblpngintd71n", 
+      signUpVerificationMethod: "code",
+      loginWith: { 
+        email: true 
+      },
+    },
+  },
+  API: {
+    endpoints: [
+      {
+        name: "ClinicaVoiceAPI",
+        endpoint: "https://r7le6kf535.execute-api.us-east-1.amazonaws.com",
+        region: "us-east-1",
+      },
+    ],
+  },
+  Storage: {
+    S3: {
+      bucket: "terraform-20251121023049872500000001",
+      region: "us-east-1",
+    },
+  },
 };
 
 Amplify.configure(awsConfig);
+
+console.log("✅ Real Amplify configured successfully");
 
 export default awsConfig;
