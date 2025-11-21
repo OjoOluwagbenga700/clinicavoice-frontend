@@ -4,7 +4,7 @@ import { Amplify } from "aws-amplify";
 const requiredEnvVars = ['REACT_APP_USER_POOL_ID', 'REACT_APP_USER_POOL_CLIENT_ID', 'REACT_APP_API_ENDPOINT', 'REACT_APP_S3_BUCKET'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 if (missingVars.length > 0) {
-  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  console.warn(`Missing environment variables: ${missingVars.join(', ')}`);
 }
 
 // AWS Amplify Configuration with Environment Variables
@@ -41,7 +41,6 @@ try {
   Amplify.configure(awsConfig);
 } catch (error) {
   console.error('Failed to configure Amplify:', error);
-  throw error;
 }
 
 if (process.env.NODE_ENV === 'development') {
