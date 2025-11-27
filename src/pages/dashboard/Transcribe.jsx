@@ -8,6 +8,7 @@ import {
   LinearProgress,
   TextField,
   Stack,
+  Alert,
 } from "@mui/material";
 import MicIcon from "@mui/icons-material/Mic";
 import StopIcon from "@mui/icons-material/Stop";
@@ -16,22 +17,35 @@ import SaveIcon from "@mui/icons-material/Save";
 import { useTranslation } from "react-i18next";
 import { uploadData } from "aws-amplify/storage";
 import { post } from "aws-amplify/api";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useUserRole } from "../../hooks/useUserRole";
 
 export default function Transcribe() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isClinician, isPatient, loading: roleLoading } = useUserRole();
   const [recording, setRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
   const [transcript, setTranscript] = useState("");
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const [error, setError] = useState("");
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const { id } = useParams();
+  
+  // File validation constants
+  const VALID_AUDIO_FORMATS = ['audio/webm', 'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/m4a', 'audio/mp4'];
+  const VALID_EXTENSIONS = ['.webm', '.mp3', '.wav', '.m4a'];
+  const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+  
+  // Determine if this is read-only mode (for patients viewing their reports)
+  const isReadOnly = isPatient();
 
   // 🎤 Start Recording
   const startRecording = async () => {
+    setError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -46,7 +60,6 @@ export default function Transcribe() {
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        setAudioBlob(blob);
         setAudioFile(new File([blob], `recording_${Date.now()}.webm`, { type: "audio/webm" }));
       };
 
@@ -54,8 +67,18 @@ export default function Transcribe() {
       setRecording(true);
       setStatusMessage(t("recording_started"));
     } catch (error) {
-      console.error(error);
-      setStatusMessage(t("microphone_denied"));
+      console.error("Microphone access error:", error);
+      // Improved microphone access error handling (Requirement 3.4)
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        setError("Microphone access was denied. Please allow microphone access in your browser settings and try again.");
+      } else if (error.name === 'NotFoundError') {
+        setError("No microphone found. Please connect a microphone and try again.");
+      } else if (error.name === 'NotReadableError') {
+        setError("Microphone is already in use by another application. Please close other applications and try again.");
+      } else {
+        setError("Unable to access microphone. Please check your device settings and try again.");
+      }
+      setStatusMessage("");
     }
   };
 
@@ -68,14 +91,77 @@ export default function Transcribe() {
     }
   };
 
+  // 📋 Validate File Upload
+  const validateAudioFile = (file) => {
+    if (!file) {
+      return { valid: false, error: "No file selected" };
+    }
+
+    // Check file format by MIME type
+    const isValidMimeType = VALID_AUDIO_FORMATS.includes(file.type);
+    
+    // Check file format by extension (fallback for cases where MIME type is not set correctly)
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    const isValidExtension = VALID_EXTENSIONS.includes(fileExtension);
+
+    if (!isValidMimeType && !isValidExtension) {
+      return { 
+        valid: false, 
+        error: `Invalid file format. Please upload an audio file in one of these formats: ${VALID_EXTENSIONS.join(', ')}` 
+      };
+    }
+
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      return { 
+        valid: false, 
+        error: `File size (${fileSizeMB}MB) exceeds the maximum limit of 100MB` 
+      };
+    }
+
+    return { valid: true, error: null };
+  };
+
+  // 📁 Handle File Selection
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+      return;
+    }
+
+    const validation = validateAudioFile(file);
+    
+    // Enhanced file upload error handling (Requirements 4.3, 4.4)
+    if (!validation.valid) {
+      setError(validation.error);
+      setAudioFile(null);
+      setStatusMessage("");
+      // Clear the file input
+      event.target.value = null;
+    } else {
+      setError("");
+      setAudioFile(file);
+      setStatusMessage(`File selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`);
+    }
+  };
+
   // 📤 Upload & Transcribe
   const handleTranscription = async () => {
     if (!audioFile) {
-      setStatusMessage(t("no_audio_uploaded"));
+      setError("Please record or upload an audio file first");
+      return;
+    }
+
+    // Validate file before transcription
+    const validation = validateAudioFile(audioFile);
+    if (!validation.valid) {
+      setError(validation.error);
       return;
     }
 
     setLoading(true);
+    setError("");
     setStatusMessage(t("transcribing"));
 
     try {
@@ -96,9 +182,22 @@ export default function Transcribe() {
       const data = await response.body.json();
       setTranscript(data.transcript || "Transcription completed successfully.");
       setStatusMessage(t("transcript_saved"));
+      setError("");
     } catch (error) {
       console.error("Transcription failed:", error);
-      setStatusMessage(t("save_failed"));
+      // Enhanced transcription error handling with retry option (Requirement 5.5)
+      if (error.name === 'NetworkError' || error.message?.includes('network')) {
+        setError("Network error occurred. Please check your connection and try again.");
+      } else if (error.response?.status === 413) {
+        setError("File is too large to process. Please use a smaller audio file.");
+      } else if (error.response?.status === 415) {
+        setError("Audio format not supported. Please use a different file format.");
+      } else if (error.response?.status === 504 || error.message?.includes('timeout')) {
+        setError("Transcription timed out. The file may be too long. Please try a shorter recording.");
+      } else {
+        setError("Transcription failed. Please try again or contact support if the problem persists.");
+      }
+      setStatusMessage("");
     } finally {
       setLoading(false);
     }
@@ -106,8 +205,14 @@ export default function Transcribe() {
 
   // 💾 Save transcript to cloud (optional extension)
   const saveTranscript = async () => {
+    if (!transcript || transcript.trim() === "") {
+      setError("Cannot save empty transcript. Please add content first.");
+      return;
+    }
+
     try {
       setLoading(true);
+      setError("");
       const response = await post({
         apiName: "ClinicaVoiceAPI",
         path: "/save-transcript",
@@ -117,7 +222,15 @@ export default function Transcribe() {
       setStatusMessage(data.message || t("transcript_saved"));
     } catch (error) {
       console.error("Save failed:", error);
-      setStatusMessage(t("save_failed"));
+      // Enhanced save error handling (Requirement 6.5)
+      if (error.name === 'NetworkError' || error.message?.includes('network')) {
+        setError("Network error. Your changes are preserved locally. Please try saving again when connected.");
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        setError("Session expired. Please log in again to save your changes.");
+      } else {
+        setError("Failed to save transcript. Your changes are preserved locally. Please try again.");
+      }
+      setStatusMessage("");
     } finally {
       setLoading(false);
     }
@@ -127,8 +240,107 @@ export default function Transcribe() {
     if (id) {
       console.log("Load transcription for report:", id);
       // Fetch or highlight the transcription here
+      // Mock loading transcript for demonstration
+      setTranscript("This is a sample transcript for report " + id);
     }
   }, [id]);
+
+  // Handle file passed from upload modal (Requirement 14.2, 14.5)
+  useEffect(() => {
+    if (location.state?.audioFile) {
+      const file = location.state.audioFile;
+      setAudioFile(file);
+      setStatusMessage(`File ready: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)}MB)`);
+      
+      // Clear the navigation state to prevent re-setting on re-render
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  // Show loading while checking role
+  if (roleLoading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography>{t("loading")}...</Typography>
+      </Box>
+    );
+  }
+
+  // For patients: show read-only view if viewing a report
+  if (isReadOnly && id) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" fontWeight="bold" color="primary" mb={3}>
+          Medical Report (View Only)
+        </Typography>
+        
+        <Alert severity="info" sx={{ mb: 3 }}>
+          This report is managed by your clinician. You have view-only access.
+        </Alert>
+
+        <Card>
+          <CardContent>
+            <Typography variant="h6" color="primary" mb={2}>
+              Report Details
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              minRows={8}
+              value={transcript}
+              variant="outlined"
+              InputProps={{
+                readOnly: true,
+              }}
+              sx={{
+                '& .MuiInputBase-input': {
+                  cursor: 'default',
+                },
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#f5f5f5',
+                }
+              }}
+            />
+            <Button
+              variant="contained"
+              onClick={() => navigate("/dashboard/reports")}
+              sx={{ mt: 2 }}
+            >
+              Back to My Reports
+            </Button>
+          </CardContent>
+        </Card>
+      </Box>
+    );
+  }
+
+  // Prevent patients from accessing transcription creation
+  if (isReadOnly && !id) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">
+          Access denied. Transcription creation is only available to clinicians.
+        </Alert>
+        <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate("/dashboard")}>
+          Return to Dashboard
+        </Button>
+      </Box>
+    );
+  }
+
+  // Verify clinician access for creation (additional check beyond routing)
+  if (!isClinician()) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">
+          Access denied. This feature is only available to clinicians.
+        </Alert>
+        <Button sx={{ mt: 2 }} variant="contained" onClick={() => navigate("/dashboard")}>
+          Return to Dashboard
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -142,9 +354,18 @@ export default function Transcribe() {
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Stack spacing={2} alignItems="center">
-            <Typography variant="body2" color="text.secondary">
-              🎙️ {statusMessage}
-            </Typography>
+            {/* Status and Error Messages */}
+            {statusMessage && (
+              <Typography variant="body2" color="text.secondary">
+                🎙️ {statusMessage}
+              </Typography>
+            )}
+            
+            {error && (
+              <Alert severity="error" sx={{ width: '100%' }}>
+                {error}
+              </Alert>
+            )}
 
             {/* Recording Buttons */}
             <Stack direction="row" spacing={2}>
@@ -176,8 +397,8 @@ export default function Transcribe() {
                 <input
                   hidden
                   type="file"
-                  accept="audio/*"
-                  onChange={(e) => setAudioFile(e.target.files[0])}
+                  accept=".webm,.mp3,.wav,.m4a,audio/webm,audio/mp3,audio/mpeg,audio/wav,audio/x-wav,audio/m4a,audio/mp4"
+                  onChange={handleFileSelect}
                 />
               </Button>
             </Stack>

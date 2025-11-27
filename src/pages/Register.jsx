@@ -59,7 +59,14 @@ export default function Register() {
       setNeedsConfirmation(true);
     } catch (err) {
       console.error("Registration failed:", err);
-      setError(err.message || "Registration failed");
+      // Generic error message - don't expose sensitive details (Requirement 15.5)
+      if (err.name === 'UsernameExistsException') {
+        setError("An account with this email already exists. Please try logging in.");
+      } else if (err.name === 'InvalidPasswordException') {
+        setError("Password does not meet requirements. Please use a stronger password.");
+      } else {
+        setError("Registration failed. Please check your information and try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +87,14 @@ export default function Register() {
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       console.error("Confirmation failed:", err);
-      setError(err.message || "Confirmation failed");
+      // Generic error message - don't expose sensitive details (Requirement 15.5)
+      if (err.name === 'CodeMismatchException') {
+        setError("Invalid confirmation code. Please check the code and try again.");
+      } else if (err.name === 'ExpiredCodeException') {
+        setError("Confirmation code has expired. Please request a new code.");
+      } else {
+        setError("Confirmation failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

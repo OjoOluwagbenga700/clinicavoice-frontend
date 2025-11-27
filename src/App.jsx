@@ -8,8 +8,8 @@ import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-//import DashboardLayout from "./DashboardLayout";
-//import Transcribe from "./pages/Transcribe";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { ROLES } from "./config/roles";
 
 
 export default function App() {
@@ -23,9 +23,15 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard/*" element={sessionStorage.getItem("clinica_token") ? <Dashboard /> : <Navigate to="/login" />} />
+          <Route 
+            path="/dashboard/*" 
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.CLINICIAN, ROLES.PATIENT]}>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="*" element={<Navigate to="/" />} />
-        {/* <Route path="/transcribe" element={<ProtectedRoute><Transcribe /></ProtectedRoute>} /> */}
         </Routes>
       </main>
       <Footer />

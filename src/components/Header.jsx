@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { AppBar, Toolbar, Box, Typography, Button, IconButton, MenuItem, Select } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { DarkMode, LightMode } from "@mui/icons-material";
+import { getCurrentUser, signOut } from "aws-amplify/auth";
 //import { useThemeMode } from "../context/ThemeContext";
 
 //import logo from "../assets/logo.jpeg";
@@ -10,12 +11,36 @@ import { DarkMode, LightMode } from "@mui/icons-material";
 export default function Header() {
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
+  const [loggedIn, setLoggedIn] = useState(false);
   //const { mode, toggleMode } = useThemeMode();
-  const loggedIn = !!sessionStorage.getItem("clinica_token");
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("clinica_token");
-    navigate("/");
+  useEffect(() => {
+    checkAuthState();
+  }, []);
+
+  const checkAuthState = async () => {
+    try {
+      await getCurrentUser();
+      setLoggedIn(true);
+    } catch {
+      setLoggedIn(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      // Clear session storage on logout (Requirement 2.5)
+      sessionStorage.clear();
+      setLoggedIn(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Clear session storage even if signOut fails
+      sessionStorage.clear();
+      setLoggedIn(false);
+      navigate("/");
+    }
   };
 
   return (

@@ -1,8 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import DashboardCard from "../../components/DashboardCard";
+import { useUserRole } from "../../hooks/useUserRole";
+import {
+  fetchDashboardStats,
+  fetchActivityChart,
+  fetchRecentNotes,
+  fetchPatientDashboardStats,
+  fetchPatientRecentReports,
+  fetchReports,
+} from "../../services/api";
+import { exportReportsToCSV } from "../../utils/csvExport";
 import {
   LineChart,
   Line,
@@ -19,48 +29,60 @@ import {
   Button,
   Chip,
   Card,
-  CardContent,
   Modal,
   Paper,
 } from "@mui/material";
 
-// Mock API
-const getStats = async () => ({
-  activePatients: 124,
-  recentTranscriptions: 87,
-  pendingReviews: 12,
-});
-const getActivityChart = async () => [
-  { date: "2025-10-01", transcriptions: 5 },
-  { date: "2025-10-02", transcriptions: 8 },
-  { date: "2025-10-03", transcriptions: 4 },
-  { date: "2025-10-04", transcriptions: 10 },
-  { date: "2025-10-05", transcriptions: 7 },
-];
-
 export default function DashboardOverview() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { isClinician, isPatient, loading: roleLoading } = useUserRole();
   const [stats, setStats] = useState({});
   const [activityChart, setActivityChart] = useState([]);
+  const [recentNotes, setRecentNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileError, setFileError] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
+      setLoading(true);
       try {
-        const statsData = await getStats();
-        const activityData = await getActivityChart();
-        setStats(statsData);
-        setActivityChart(activityData);
+        if (isClinician()) {
+          // Fetch clinician-specific data (Requirements 10.1, 10.2, 10.3, 10.4, 10.5, 19.4, 19.5)
+          const [statsData, activityData, notesData] = await Promise.all([
+            fetchDashboardStats(),
+            fetchActivityChart(),
+            fetchRecentNotes(),
+          ]);
+          
+          setStats(statsData);
+          setActivityChart(activityData);
+          setRecentNotes(notesData);
+        } else if (isPatient()) {
+          // Fetch patient-specific data
+          const [statsData, reportsData] = await Promise.all([
+            fetchPatientDashboardStats(),
+            fetchPatientRecentReports(),
+          ]);
+          
+          setStats(statsData);
+          setRecentNotes(reportsData);
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Failed to fetch dashboard data:', err);
       } finally {
         setLoading(false);
       }
     }
-    fetchData();
-  }, []);
+    
+    // Only fetch data once role is loaded
+    if (!roleLoading) {
+      fetchData();
+    }
+  }, [isClinician, isPatient, roleLoading]);
 
   const handleNewTranscription = () => {
     navigate("/dashboard/transcribe");
@@ -68,22 +90,124 @@ export default function DashboardOverview() {
 
   const handleUploadAudio = () => {
     setUploadOpen(true);
+    // Reset state when opening modal
+    setSelectedFile(null);
+    setFileError("");
   };
 
-  const handleExportReport = () => {
-    // Mock export
-    const csvContent = "data:text/csv;charset=utf-8,Patient,Date,Status\nDr. Jane Doe,2025-10-01,Transcribed";
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "transcriptions_report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleModalClose = () => {
+    setUploadOpen(false);
+    // Clean up state when closing modal
+    setSelectedFile(null);
+    setFileError("");
+    setUploading(false);
+  };
+
+  // File validation constants
+  const VALID_AUDIO_FORMATS = ['audio/webm', 'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/m4a', 'audio/mp4'];
+  const VALID_EXTENSIONS = ['.webm', '.mp3', '.wav', '.m4a'];
+  const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB in bytes
+
+  const validateAudioFile = (file) => {
+    if (!file) {
+      return { valid: false, error: "No file selected" };
+    }
+
+    // Check file format by MIME type
+    const isValidMimeType = VALID_AUDIO_FORMATS.includes(file.type);
+    
+    // Check file format by extension (fallback for cases where MIME type is not set correctly)
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    const isValidExtension = VALID_EXTENSIONS.includes(fileExtension);
+
+    if (!isValidMimeType && !isValidExtension) {
+      return { 
+        valid: false, 
+        error: `Invalid file format. Please upload an audio file in one of these formats: ${VALID_EXTENSIONS.join(', ')}` 
+      };
+    }
+
+    // Check file size (Requirement 4.3)
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      return { 
+        valid: false, 
+        error: `File size (${fileSizeMB}MB) exceeds the maximum limit of 100MB` 
+      };
+    }
+
+    return { valid: true, error: null };
+  };
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+      return;
+    }
+
+    // Validate file (Requirements 4.1, 4.2, 4.3, 4.4)
+    const validation = validateAudioFile(file);
+    
+    if (!validation.valid) {
+      setFileError(validation.error);
+      setSelectedFile(null);
+      // Clear the file input
+      event.target.value = null;
+    } else {
+      setFileError("");
+      setSelectedFile(file);
+    }
+  };
+
+  const handleConfirmUpload = () => {
+    if (!selectedFile) {
+      setFileError("Please select an audio file first");
+      return;
+    }
+
+    // Validate again before proceeding
+    const validation = validateAudioFile(selectedFile);
+    if (!validation.valid) {
+      setFileError(validation.error);
+      return;
+    }
+
+    // Navigate to transcribe page with the file
+    // We'll pass the file through navigation state
+    navigate("/dashboard/transcribe", { state: { audioFile: selectedFile } });
+    
+    // Close modal
+    handleModalClose();
+  };
+
+  const handleExportReport = async () => {
+    // Fetch all reports and export to CSV (Requirement 14.3)
+    try {
+      const reports = await fetchReports();
+      
+      // Generate filename with current date
+      const today = new Date().toISOString().split('T')[0];
+      const filename = `clinicavoice_reports_${today}.csv`;
+      
+      // Export reports to CSV with patient name, date, and summary
+      exportReportsToCSV(reports, filename);
+    } catch (error) {
+      console.error('Failed to export reports:', error);
+      // Could add user-facing error notification here
+      alert('Failed to export reports. Please try again.');
+    }
   };
 
   const handleEditTemplates = () => {
     navigate("/dashboard/templates");
+  };
+
+  const handleViewReports = () => {
+    navigate("/dashboard/reports");
+  };
+
+  const handleViewProfile = () => {
+    navigate("/dashboard/profile");
   };
 
   return (
@@ -95,106 +219,264 @@ export default function DashboardOverview() {
           {t("dashboard_overview")}
         </Typography>
 
-        {loading ? (
+        {(loading || roleLoading) ? (
           <Typography textAlign="center" sx={{ py: 20, color: "#999" }}>
             {t("loading")}...
           </Typography>
         ) : (
           <>
-            {/* Top Stats Cards */}
-            <Grid container spacing={3} sx={{ mb: 6 }}>
-              <Grid item xs={12} md={4}>
-                <DashboardCard title={t("dashboard_patients")} value={stats.activePatients} />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <DashboardCard title={t("dashboard_transcriptions")} value={stats.recentTranscriptions} />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <DashboardCard title={t("dashboard_reviews")} value={stats.pendingReviews} />
-              </Grid>
-            </Grid>
+            {/* Clinician Dashboard View */}
+            {isClinician() && (
+              <>
+                {/* Top Stats Cards */}
+                <Grid container spacing={3} sx={{ mb: 6 }}>
+                  <Grid item xs={12} md={4}>
+                    <DashboardCard title={t("dashboard_patients")} value={stats.activePatients} />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <DashboardCard title={t("dashboard_transcriptions")} value={stats.recentTranscriptions} />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <DashboardCard title={t("dashboard_reviews")} value={stats.pendingReviews} />
+                  </Grid>
+                </Grid>
 
-            {/* Activity Chart */}
-            <Card sx={{ p: 3, mb: 6 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                {t("dashboard_activity")}
-              </Typography>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={activityChart}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" stroke="#666" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="transcriptions" stroke="#C62828" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </Card>
+                {/* Activity Chart */}
+                <Card sx={{ p: 3, mb: 6 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                    {t("dashboard_activity")}
+                  </Typography>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={activityChart}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" stroke="#666" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="transcriptions" stroke="#C62828" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Card>
 
-            {/* Recent Notes */}
-            <Card sx={{ p: 3, mb: 6 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                {t("dashboard_recentNotes")}
-              </Typography>
-              <Box>
-                <ul style={{ paddingLeft: 20, color: "#555" }}>
-                  <li>
-                    Dr. Jane Doe — <Chip label={t("transcribed")} color="success" size="small" /> (2025-10-01)
-                  </li>
-                  <li>
-                    Dr. Samuel K — <Chip label={t("pendingReview")} color="warning" size="small" /> (2025-10-02)
-                  </li>
-                  <li>
-                    Dr. Peter Lin — <Chip label={t("reviewed")} color="info" size="small" /> (2025-10-03)
-                  </li>
-                </ul>
-              </Box>
-            </Card>
+                {/* Recent Notes */}
+                <Card sx={{ p: 3, mb: 6 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                    {t("dashboard_recentNotes")}
+                  </Typography>
+                  <Box>
+                    {recentNotes.length > 0 ? (
+                      <ul style={{ paddingLeft: 20, color: "#555" }}>
+                        {recentNotes.map((note) => (
+                          <li key={note.id}>
+                            {note.patient} —{" "}
+                            <Chip
+                              label={t(note.status)}
+                              color={
+                                note.status === "transcribed"
+                                  ? "success"
+                                  : note.status === "pendingReview"
+                                  ? "warning"
+                                  : "info"
+                              }
+                              size="small"
+                            />{" "}
+                            ({note.date})
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <Typography color="text.secondary">
+                        No recent notes available
+                      </Typography>
+                    )}
+                  </Box>
+                </Card>
 
-            {/* Quick Actions */}
-            <Card sx={{ p: 3 }}>
-              <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-                {t("dashboard_quickActions")}
-              </Typography>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                <Button variant="contained" color="primary" onClick={handleNewTranscription}>
-                  {t("action_newTranscription")}
-                </Button>
-                <Button variant="outlined" onClick={handleUploadAudio}>
-                  {t("action_uploadAudio")}
-                </Button>
-                <Button variant="outlined" onClick={handleExportReport}>
-                  {t("action_exportReport")}
-                </Button>
-                <Button variant="outlined" onClick={handleEditTemplates}>
-                  {t("action_editTemplates")}
-                </Button>
-              </Box>
-            </Card>
+                {/* Quick Actions - Clinician */}
+                <Card sx={{ p: 3 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                    {t("dashboard_quickActions")}
+                  </Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                    <Button variant="contained" color="primary" onClick={handleNewTranscription}>
+                      {t("action_newTranscription")}
+                    </Button>
+                    <Button variant="outlined" onClick={handleUploadAudio}>
+                      {t("action_uploadAudio")}
+                    </Button>
+                    <Button variant="outlined" onClick={handleExportReport}>
+                      {t("action_exportReport")}
+                    </Button>
+                    <Button variant="outlined" onClick={handleEditTemplates}>
+                      {t("action_editTemplates")}
+                    </Button>
+                  </Box>
+                </Card>
+              </>
+            )}
 
-            {/* Upload Modal */}
-            <Modal open={uploadOpen} onClose={() => setUploadOpen(false)}>
-              <Paper
-                sx={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  p: 4,
-                  width: 400,
-                }}
-              >
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  {t("action_uploadAudio")}
-                </Typography>
-                <input type="file" accept="audio/*" />
-                <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end", gap: 2 }}>
-                  <Button variant="outlined" onClick={() => setUploadOpen(false)}>
-                    {t("cancel")}
-                  </Button>
-                  <Button variant="contained">{t("upload")}</Button>
-                </Box>
-              </Paper>
-            </Modal>
+            {/* Patient Dashboard View - Simplified */}
+            {isPatient() && (
+              <>
+                {/* Patient Stats Cards */}
+                <Grid container spacing={3} sx={{ mb: 6 }}>
+                  <Grid item xs={12} md={4}>
+                    <DashboardCard title="My Reports" value={stats.totalReports} />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <DashboardCard title="Upcoming Appointments" value={stats.upcomingAppointments} />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Card sx={{ p: 3, height: "100%" }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Last Visit
+                      </Typography>
+                      <Typography variant="h5" fontWeight={700}>
+                        {stats.lastVisit}
+                      </Typography>
+                    </Card>
+                  </Grid>
+                </Grid>
+
+                {/* Welcome Message */}
+                <Card sx={{ p: 3, mb: 6, backgroundColor: "#f5f5f5" }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                    Welcome to Your Health Dashboard
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Here you can view your medical reports, check upcoming appointments, and manage your profile. 
+                    All your health information is securely stored and managed by your healthcare provider.
+                  </Typography>
+                </Card>
+
+                {/* Recent Reports */}
+                <Card sx={{ p: 3, mb: 6 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                    Recent Reports
+                  </Typography>
+                  <Box>
+                    {recentNotes.length > 0 ? (
+                      <ul style={{ paddingLeft: 20, color: "#555" }}>
+                        {recentNotes.map((report) => (
+                          <li key={report.id}>
+                            {report.title} —{" "}
+                            <Chip
+                              label={report.status}
+                              color={
+                                report.status === "Reviewed"
+                                  ? "success"
+                                  : "info"
+                              }
+                              size="small"
+                            />{" "}
+                            ({report.date})
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <Typography color="text.secondary">
+                        No recent reports available
+                      </Typography>
+                    )}
+                  </Box>
+                </Card>
+
+                {/* Quick Actions - Patient */}
+                <Card sx={{ p: 3 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+                    Quick Actions
+                  </Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                    <Button variant="contained" color="primary" onClick={handleViewReports}>
+                      View My Reports
+                    </Button>
+                    <Button variant="outlined" onClick={handleViewProfile}>
+                      My Profile
+                    </Button>
+                  </Box>
+                </Card>
+              </>
+            )}
+
+            {/* Upload Modal - Clinician only */}
+            {isClinician() && (
+              <Modal open={uploadOpen} onClose={handleModalClose}>
+                <Paper
+                  sx={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    p: 4,
+                    width: 500,
+                    maxWidth: "90vw",
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    {t("action_uploadAudio")}
+                  </Typography>
+                  
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Select an audio file to transcribe. Supported formats: MP3, WAV, M4A, WebM (max 100MB)
+                  </Typography>
+
+                  {/* File Input */}
+                  <Box sx={{ mb: 2 }}>
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      fullWidth
+                      sx={{ py: 2 }}
+                    >
+                      {selectedFile ? selectedFile.name : "Choose Audio File"}
+                      <input
+                        hidden
+                        type="file"
+                        accept=".webm,.mp3,.wav,.m4a,audio/webm,audio/mp3,audio/mpeg,audio/wav,audio/x-wav,audio/m4a,audio/mp4"
+                        onChange={handleFileSelect}
+                      />
+                    </Button>
+                  </Box>
+
+                  {/* File Info */}
+                  {selectedFile && !fileError && (
+                    <Box sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>File:</strong> {selectedFile.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Size:</strong> {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Type:</strong> {selectedFile.type || 'Unknown'}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Error Message */}
+                  {fileError && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="error">
+                        ⚠️ {fileError}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Action Buttons */}
+                  <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                    <Button variant="outlined" onClick={handleModalClose} disabled={uploading}>
+                      {t("cancel")}
+                    </Button>
+                    <Button 
+                      variant="contained" 
+                      onClick={handleConfirmUpload}
+                      disabled={!selectedFile || !!fileError || uploading}
+                    >
+                      {uploading ? "Processing..." : "Continue to Transcribe"}
+                    </Button>
+                  </Box>
+                </Paper>
+              </Modal>
+            )}
           </>
         )}
       </Box>
