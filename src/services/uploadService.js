@@ -17,7 +17,16 @@ export async function getPresignedUploadUrl(file) {
       fileSize: file.size
     });
 
-    const response = await post({
+    // Import fetchAuthSession to check authentication
+    const { fetchAuthSession } = await import('aws-amplify/auth');
+    const session = await fetchAuthSession();
+    
+    console.log('🔐 Auth session:', {
+      isAuthenticated: !!session.tokens,
+      hasIdToken: !!session.tokens?.idToken
+    });
+
+    const restOperation = post({
       apiName: "ClinicaVoiceAPI",
       path: "/upload/presign",
       options: {
@@ -27,7 +36,9 @@ export async function getPresignedUploadUrl(file) {
           fileSize: file.size
         }
       }
-    }).response;
+    });
+
+    const response = await restOperation.response;
 
     console.log('✅ Response received:', response.status);
     const data = await response.body.json();
