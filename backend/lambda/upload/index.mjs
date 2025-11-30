@@ -26,7 +26,7 @@ export const handler = async (event) => {
     const { fileName, fileType, fileSize } = JSON.parse(event.body);
     
     // Validate file type
-    const allowedTypes = ['audio/webm', 'audio/mp3', 'audio/mp4', 'audio/wav', 'audio/m4a'];
+    const allowedTypes = ['audio/webm', 'audio/mp3', 'audio/mp4', 'audio/wav', 'audio/m4a', 'audio/mpeg'];
     if (!allowedTypes.includes(fileType)) {
       return {
         statusCode: 400,
