@@ -324,8 +324,10 @@ export default function Transcribe() {
         
         // Load medical analysis if available
         if (report.medicalAnalysis) {
-          console.log("Medical analysis found:", report.medicalAnalysis);
+          console.log("🏥 Medical analysis found:", report.medicalAnalysis);
           setMedicalAnalysis(report.medicalAnalysis);
+        } else {
+          console.log("⚠️ No medical analysis in report yet. It may still be processing.");
         }
       } catch (err) {
         console.error("Failed to load transcript:", err);
@@ -540,6 +542,19 @@ export default function Transcribe() {
       )}
 
       {/* Medical Analysis Section */}
+      {id && !medicalAnalysis && transcript && (
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Alert severity="info">
+              <Typography variant="body2">
+                🔄 Medical analysis is being processed by AI. This may take 1-2 minutes. 
+                Refresh the page to see the insights once processing is complete.
+              </Typography>
+            </Alert>
+          </CardContent>
+        </Card>
+      )}
+      
       {medicalAnalysis && (
         <Card sx={{ mt: 3 }}>
           <CardContent>

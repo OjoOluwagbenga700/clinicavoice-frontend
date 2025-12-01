@@ -11,11 +11,17 @@ export const handler = async (event) => {
   console.log('Comprehend Medical event received:', JSON.stringify(event, null, 2));
   
   try {
-    // This function is triggered by S3 when transcription JSON is created
-    let transcriptionId, transcript;
+    // This function can be invoked directly or via S3 event
+    let transcriptionId, transcript, userId;
     
-    if (event.Records && event.Records[0].s3) {
-      // Triggered by S3 event
+    if (event.transcriptionId && event.transcript && event.userId) {
+      // Direct invocation from transcribe-completion Lambda (preferred)
+      transcriptionId = event.transcriptionId;
+      transcript = event.transcript;
+      userId = event.userId;
+      console.log(`Direct invocation: transcriptionId=${transcriptionId}, userId=${userId}`);
+    } else if (event.Records && event.Records[0].s3) {
+      // Triggered by S3 event (fallback - won't have userId)
       const bucket = event.Records[0].s3.bucket.name;
       const key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
       
@@ -46,10 +52,11 @@ export const handler = async (event) => {
       if (!transcript) {
         throw new Error('No transcript text found in transcription file');
       }
+      
+      // Need to query DynamoDB to get userId
+      userId = null; // Will query below
     } else {
-      // Direct invocation (for testing)
-      transcriptionId = event.transcriptionId;
-      transcript = event.transcript;
+      throw new Error('Invalid event format');
     }
     
     if (!transcript) {
@@ -98,25 +105,43 @@ export const handler = async (event) => {
       }
     };
     
-    // Update transcription record with medical analysis
-    // Note: We'll need proper userId context
-    const userId = 'system'; // Placeholder - needs proper implementation
+    // If userId not provided, query DynamoDB to find it
+    if (!userId) {
+      console.log(`Querying DynamoDB to find userId for transcriptionId: ${transcriptionId}`);
+      const queryCommand = new QueryCommand({
+        TableName: process.env.REPORTS_TABLE,
+        IndexName: 'TypeIndex',
+        KeyConditionExpression: '#type = :type',
+        FilterExpression: 'id = :id',
+        ExpressionAttributeNames: { '#type': 'type' },
+        ExpressionAttributeValues: {
+          ':type': 'transcription',
+          ':id': transcriptionId
+        },
+        Limit: 1
+      });
+      
+      const queryResult = await docClient.send(queryCommand);
+      if (queryResult.Items && queryResult.Items.length > 0) {
+        userId = queryResult.Items[0].userId;
+        console.log(`Found userId: ${userId}`);
+      } else {
+        throw new Error(`Could not find transcription record for ID: ${transcriptionId}`);
+      }
+    }
     
+    // Update transcription record with medical analysis
     await docClient.send(new UpdateCommand({
       TableName: process.env.REPORTS_TABLE,
       Key: { id: transcriptionId, userId: userId },
-      UpdateExpression: 'SET medicalAnalysis = :analysis, #status = :status, updatedAt = :updatedAt',
-      ExpressionAttributeNames: {
-        '#status': 'status'
-      },
+      UpdateExpression: 'SET medicalAnalysis = :analysis, updatedAt = :updatedAt',
       ExpressionAttributeValues: {
         ':analysis': medicalAnalysis,
-        ':status': 'completed',
         ':updatedAt': new Date().toISOString()
       }
     }));
     
-    console.log(`Medical analysis completed for transcription: ${transcriptionId}`);
+    console.log(`✅ Medical analysis completed for transcription: ${transcriptionId}, userId: ${userId}`);
     
     return {
       statusCode: 200,
