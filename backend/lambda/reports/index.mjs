@@ -99,21 +99,50 @@ export const handler = async (event) => {
       }
       
       const body = JSON.parse(event.body);
+      
+      // Build dynamic update expression to only update provided fields
+      const updateExpressions = [];
+      const expressionAttributeNames = {};
+      const expressionAttributeValues = {
+        ':updatedAt': new Date().toISOString()
+      };
+      
+      if (body.summary !== undefined) {
+        updateExpressions.push('#summary = :summary');
+        expressionAttributeNames['#summary'] = 'summary';
+        expressionAttributeValues[':summary'] = body.summary;
+      }
+      
+      if (body.content !== undefined) {
+        updateExpressions.push('#content = :content');
+        expressionAttributeNames['#content'] = 'content';
+        expressionAttributeValues[':content'] = body.content;
+      }
+      
+      if (body.transcript !== undefined) {
+        updateExpressions.push('transcript = :transcript');
+        expressionAttributeValues[':transcript'] = body.transcript;
+      }
+      
+      if (body.status !== undefined) {
+        updateExpressions.push('#status = :status');
+        expressionAttributeNames['#status'] = 'status';
+        expressionAttributeValues[':status'] = body.status;
+      }
+      
+      if (body.patientName !== undefined) {
+        updateExpressions.push('patientName = :patientName');
+        expressionAttributeValues[':patientName'] = body.patientName;
+      }
+      
+      updateExpressions.push('updatedAt = :updatedAt');
+      
       const command = new UpdateCommand({
         TableName: process.env.REPORTS_TABLE,
         Key: { id: pathParameters.id, userId },
-        UpdateExpression: 'SET #summary = :summary, #content = :content, #status = :status, updatedAt = :updatedAt',
-        ExpressionAttributeNames: {
-          '#summary': 'summary',
-          '#content': 'content',
-          '#status': 'status'
-        },
-        ExpressionAttributeValues: {
-          ':summary': body.summary,
-          ':content': body.content,
-          ':status': body.status,
-          ':updatedAt': new Date().toISOString()
-        },
+        UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+        ExpressionAttributeNames: Object.keys(expressionAttributeNames).length > 0 ? expressionAttributeNames : undefined,
+        ExpressionAttributeValues: expressionAttributeValues,
         ReturnValues: 'ALL_NEW'
       });
       

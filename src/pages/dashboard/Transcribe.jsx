@@ -33,6 +33,7 @@ export default function Transcribe() {
   const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState("");
   const [medicalAnalysis, setMedicalAnalysis] = useState(null);
+  const [currentFileId, setCurrentFileId] = useState(null); // Track fileId for saving
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const { id } = useParams();
@@ -248,6 +249,7 @@ export default function Transcribe() {
           
           if (transcriptionData.status === 'completed') {
             setTranscript(transcriptionData.transcript || "Transcription completed successfully.");
+            setCurrentFileId(uploadResult.fileId); // Store fileId for saving
             setStatusMessage("Transcription completed! Analyzing medical content...");
             setError("");
             
@@ -306,27 +308,60 @@ export default function Transcribe() {
       // Import fetchAuthSession for authentication
       const { fetchAuthSession } = await import('aws-amplify/auth');
       const session = await fetchAuthSession();
+      const { put } = await import('aws-amplify/api');
       
-      const response = await post({
-        apiName: "ClinicaVoiceAPI",
-        path: "/reports",
-        options: { 
-          body: {
-            type: 'transcription',
-            content: transcript,
-            summary: transcript.substring(0, 100) + '...',
-            status: 'completed',
-            patientName: 'Patient', // TODO: Add patient selection
+      // If we have a currentFileId or id, update the existing record
+      const recordId = id || currentFileId;
+      
+      if (recordId) {
+        // Update existing transcription record
+        console.log(`Updating existing record: ${recordId}`);
+        const response = await put({
+          apiName: "ClinicaVoiceAPI",
+          path: `/reports/${recordId}`,
+          options: { 
+            body: {
+              content: transcript,
+              transcript: transcript, // Keep both for compatibility
+              summary: transcript.substring(0, 100) + '...',
+              status: 'completed',
+              patientName: 'Patient', // TODO: Add patient selection
+              // Medical analysis is already in the record, no need to send it
+            },
+            headers: {
+              Authorization: `Bearer ${session.tokens.idToken.toString()}`,
+              'Content-Type': 'application/json'
+            }
           },
-          headers: {
-            Authorization: `Bearer ${session.tokens.idToken.toString()}`,
-            'Content-Type': 'application/json'
-          }
-        },
-      }).response;
-      
-      const data = await response.body.json();
-      setStatusMessage("Transcript saved successfully!");
+        }).response;
+        
+        await response.body.json();
+        setStatusMessage("Transcript saved successfully!");
+      } else {
+        // Create new report (fallback for old flow)
+        console.log('Creating new report');
+        const response = await post({
+          apiName: "ClinicaVoiceAPI",
+          path: "/reports",
+          options: { 
+            body: {
+              type: 'transcription',
+              content: transcript,
+              summary: transcript.substring(0, 100) + '...',
+              status: 'completed',
+              patientName: 'Patient', // TODO: Add patient selection
+              medicalAnalysis: medicalAnalysis // Include medical analysis if available
+            },
+            headers: {
+              Authorization: `Bearer ${session.tokens.idToken.toString()}`,
+              'Content-Type': 'application/json'
+            }
+          },
+        }).response;
+        
+        await response.body.json();
+        setStatusMessage("Transcript saved successfully!");
+      }
       
       // Navigate to reports page after successful save
       setTimeout(() => {
