@@ -229,3 +229,22 @@ resource "aws_iam_role_policy" "lambda_comprehend_medical" {
   })
 }
 
+# Lambda Invoke Policy (for transcribe-completion to invoke comprehend-medical)
+resource "aws_iam_role_policy" "lambda_invoke" {
+  name = "${var.project_name}-lambda-invoke-${var.environment}"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "lambda:InvokeFunction"
+        ]
+        Resource = "arn:aws:lambda:*:*:function:${var.project_name}-*-${var.environment}"
+      }
+    ]
+  })
+}
+

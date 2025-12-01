@@ -111,9 +111,10 @@ resource "aws_s3_bucket_notification" "lambda_triggers" {
     filter_suffix       = ""
   }
 
-  # Trigger comprehend-medical when transcription JSON is created
+  # Trigger transcribe-completion when transcription JSON is created
+  # This Lambda will then invoke comprehend-medical
   lambda_function {
-    lambda_function_arn = aws_lambda_function.functions["comprehend-medical"].arn
+    lambda_function_arn = aws_lambda_function.functions["transcribe-completion"].arn
     events              = ["s3:ObjectCreated:*"]
     filter_prefix       = "transcripts/"
     filter_suffix       = ".json"
@@ -121,7 +122,7 @@ resource "aws_s3_bucket_notification" "lambda_triggers" {
 
   depends_on = [
     aws_lambda_permission.s3_invoke_transcribe_processor,
-    aws_lambda_permission.s3_invoke_comprehend_medical
+    aws_lambda_permission.s3_invoke_transcribe_completion
   ]
 }
 
@@ -130,6 +131,15 @@ resource "aws_lambda_permission" "s3_invoke_transcribe_processor" {
   statement_id  = "AllowS3InvokeTranscribeProcessor"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.functions["transcribe-processor"].function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.main.arn
+}
+
+# Lambda permission for S3 to invoke transcribe-completion
+resource "aws_lambda_permission" "s3_invoke_transcribe_completion" {
+  statement_id  = "AllowS3InvokeTranscribeCompletion"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.functions["transcribe-completion"].function_name
   principal     = "s3.amazonaws.com"
   source_arn    = aws_s3_bucket.main.arn
 }

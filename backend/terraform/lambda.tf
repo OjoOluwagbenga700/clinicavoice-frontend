@@ -74,6 +74,18 @@ locals {
         ENVIRONMENT   = var.environment
       }
     }
+    transcribe-completion = {
+      handler     = "index.handler"
+      runtime     = "nodejs20.x"
+      timeout     = 60
+      memory_size = 512
+      environment_variables = {
+        REPORTS_TABLE                = aws_dynamodb_table.reports.name
+        S3_BUCKET                    = aws_s3_bucket.main.id
+        ENVIRONMENT                  = var.environment
+        COMPREHEND_MEDICAL_FUNCTION  = "${var.project_name}-comprehend-medical-${var.environment}"
+      }
+    }
   }
 }
 

@@ -9,9 +9,13 @@ const docClient = DynamoDBDocumentClient.from(client);
  * Handles all dashboard endpoints: /stats, /activity, /recent-notes
  */
 export const handler = async (event) => {
+  console.log('Dashboard Lambda invoked:', JSON.stringify(event, null, 2));
+  
   try {
     const userId = event.requestContext.authorizer.claims.sub;
     const userType = event.requestContext.authorizer.claims['custom:user_type'];
+    
+    console.log(`User: ${userId}, Type: ${userType}`);
     
     // Authorization check
     if (userType !== 'clinician') {
@@ -22,11 +26,11 @@ export const handler = async (event) => {
       };
     }
     
-    // Extract endpoint from path
-    const path = event.requestContext.http.path;
+    // Extract endpoint from path (REST API uses event.path)
+    const path = event.path;
     const endpoint = path.split('/').pop(); // Gets 'stats', 'activity', or 'recent-notes'
     
-    console.log(`Dashboard endpoint: ${endpoint} for user: ${userId}`);
+    console.log(`Dashboard endpoint: ${endpoint} for user: ${userId}, full path: ${path}`);
     
     // Route to appropriate handler
     switch (endpoint) {
@@ -37,18 +41,20 @@ export const handler = async (event) => {
       case 'recent-notes':
         return await handleRecentNotes(userId);
       default:
+        console.error(`Unknown endpoint: ${endpoint}`);
         return {
           statusCode: 400,
           headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ error: 'Invalid dashboard endpoint' })
+          body: JSON.stringify({ error: `Invalid dashboard endpoint: ${endpoint}` })
         };
     }
   } catch (error) {
     console.error('Dashboard error:', error);
+    console.error('Error stack:', error.stack);
     return {
       statusCode: 500,
       headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Internal server error' })
+      body: JSON.stringify({ error: 'Internal server error', message: error.message })
     };
   }
 };

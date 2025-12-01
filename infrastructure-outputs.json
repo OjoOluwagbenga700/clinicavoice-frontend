@@ -2,37 +2,37 @@
   "api_gateway_endpoint": {
     "sensitive": false,
     "type": "string",
-    "value": "https://i58fqe2yx7.execute-api.us-east-1.amazonaws.com/prod"
+    "value": "https://hlakr36667.execute-api.us-east-1.amazonaws.com/prod"
   },
   "api_gateway_id": {
     "sensitive": false,
     "type": "string",
-    "value": "i58fqe2yx7"
+    "value": "hlakr36667"
   },
   "api_gateway_url": {
     "sensitive": false,
     "type": "string",
-    "value": "https://i58fqe2yx7.execute-api.us-east-1.amazonaws.com/prod"
+    "value": "https://hlakr36667.execute-api.us-east-1.amazonaws.com/prod"
   },
   "cognito_identity_pool_id": {
     "sensitive": false,
     "type": "string",
-    "value": "us-east-1:665205dc-51d8-47f0-8b1c-4ecc6ccdc557"
+    "value": "us-east-1:99bcaf64-3368-4a4a-ba8a-70001c52f83b"
   },
   "cognito_user_pool_arn": {
     "sensitive": false,
     "type": "string",
-    "value": "arn:aws:cognito-idp:us-east-1:969446871231:userpool/us-east-1_9BXZg2ivO"
+    "value": "arn:aws:cognito-idp:us-east-1:969446871231:userpool/us-east-1_uwfPcx3vS"
   },
   "cognito_user_pool_client_id": {
     "sensitive": false,
     "type": "string",
-    "value": "77nq8slgt6co96epmlh56s1cjq"
+    "value": "4ub09lr312odkpiqb75kfr891d"
   },
   "cognito_user_pool_id": {
     "sensitive": false,
     "type": "string",
-    "value": "us-east-1_9BXZg2ivO"
+    "value": "us-east-1_uwfPcx3vS"
   },
   "frontend_config": {
     "sensitive": false,
@@ -47,11 +47,11 @@
       }
     ],
     "value": {
-      "api_gateway_endpoint": "https://i58fqe2yx7.execute-api.us-east-1.amazonaws.com/prod",
+      "api_gateway_endpoint": "https://hlakr36667.execute-api.us-east-1.amazonaws.com/prod",
       "aws_region": "us-east-1",
-      "cognito_user_pool_client_id": "77nq8slgt6co96epmlh56s1cjq",
-      "cognito_user_pool_id": "us-east-1_9BXZg2ivO",
-      "s3_bucket_name": "clinicavoice-storage-prod-scz426fh"
+      "cognito_user_pool_client_id": "4ub09lr312odkpiqb75kfr891d",
+      "cognito_user_pool_id": "us-east-1_uwfPcx3vS",
+      "s3_bucket_name": "clinicavoice-storage-prod-oupuusg9"
     }
   },
   "lambda_function_arns": {
@@ -64,6 +64,7 @@
         "reports": "string",
         "templates": "string",
         "transcribe": "string",
+        "transcribe-completion": "string",
         "transcribe-processor": "string",
         "upload": "string"
       }
@@ -74,6 +75,7 @@
       "reports": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-reports-prod",
       "templates": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-templates-prod",
       "transcribe": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-prod",
+      "transcribe-completion": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-completion-prod",
       "transcribe-processor": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-processor-prod",
       "upload": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-upload-prod"
     }
@@ -88,6 +90,7 @@
         "reports": "string",
         "templates": "string",
         "transcribe": "string",
+        "transcribe-completion": "string",
         "transcribe-processor": "string",
         "upload": "string"
       }
@@ -98,6 +101,7 @@
       "reports": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-reports-prod/invocations",
       "templates": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-templates-prod/invocations",
       "transcribe": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-prod/invocations",
+      "transcribe-completion": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-completion-prod/invocations",
       "transcribe-processor": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-processor-prod/invocations",
       "upload": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-upload-prod/invocations"
     }
@@ -112,6 +116,7 @@
         "reports": "string",
         "templates": "string",
         "transcribe": "string",
+        "transcribe-completion": "string",
         "transcribe-processor": "string",
         "upload": "string"
       }
@@ -122,6 +127,7 @@
       "reports": "clinicavoice-reports-prod",
       "templates": "clinicavoice-templates-prod",
       "transcribe": "clinicavoice-transcribe-prod",
+      "transcribe-completion": "clinicavoice-transcribe-completion-prod",
       "transcribe-processor": "clinicavoice-transcribe-processor-prod",
       "upload": "clinicavoice-upload-prod"
     }
@@ -134,12 +140,12 @@
   "s3_bucket_arn": {
     "sensitive": false,
     "type": "string",
-    "value": "arn:aws:s3:::clinicavoice-storage-prod-scz426fh"
+    "value": "arn:aws:s3:::clinicavoice-storage-prod-oupuusg9"
   },
   "s3_bucket_name": {
     "sensitive": false,
     "type": "string",
-    "value": "clinicavoice-storage-prod-scz426fh"
+    "value": "clinicavoice-storage-prod-oupuusg9"
   },
   "templates_table_name": {
     "sensitive": false,

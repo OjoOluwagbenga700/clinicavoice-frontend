@@ -6,10 +6,14 @@ const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
 export const handler = async (event) => {
+  console.log('Reports Lambda invoked:', JSON.stringify(event, null, 2));
+  
   const userId = event.requestContext.authorizer.claims.sub;
   const userType = event.requestContext.authorizer.claims['custom:user_type'];
-  const method = event.requestContext.http.method;
+  const method = event.httpMethod; // REST API uses httpMethod, not requestContext.http.method
   const pathParameters = event.pathParameters || {};
+  
+  console.log(`Method: ${method}, User: ${userId}, Type: ${userType}, Path params:`, pathParameters);
   
   try {
     // GET /reports - List all reports

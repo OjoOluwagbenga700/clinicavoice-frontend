@@ -148,6 +148,66 @@ export default function Transcribe() {
     }
   };
 
+  // 🏥 Poll for medical analysis after transcription completes
+  const pollForMedicalAnalysis = async (fileId) => {
+    console.log(`🔄 Starting to poll for medical analysis for fileId: ${fileId}`);
+    
+    let analysisAttempts = 0;
+    const maxAnalysisAttempts = 24; // 2 minutes with 5-second intervals
+    
+    const checkAnalysis = async () => {
+      try {
+        const { fetchAuthSession } = await import('aws-amplify/auth');
+        const session = await fetchAuthSession();
+        const { get } = await import('aws-amplify/api');
+        
+        const restOperation = get({
+          apiName: "ClinicaVoiceAPI",
+          path: `/transcribe/${fileId}`,
+          options: {
+            headers: {
+              Authorization: `Bearer ${session.tokens.idToken.toString()}`
+            }
+          }
+        });
+        
+        const response = await restOperation.response;
+        const data = await response.body.json();
+        
+        if (data.medicalAnalysis) {
+          console.log('✅ Medical analysis received:', data.medicalAnalysis);
+          setMedicalAnalysis(data.medicalAnalysis);
+          setStatusMessage("Medical analysis completed!");
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error('Error checking medical analysis:', error);
+        return false;
+      }
+    };
+    
+    // Poll for medical analysis
+    while (analysisAttempts < maxAnalysisAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+      analysisAttempts++;
+      
+      const hasAnalysis = await checkAnalysis();
+      
+      if (hasAnalysis) {
+        break;
+      } else {
+        console.log(`⏳ Waiting for medical analysis... (${analysisAttempts * 5}s)`);
+      }
+    }
+    
+    if (analysisAttempts >= maxAnalysisAttempts) {
+      console.log('⚠️ Medical analysis polling timeout - analysis may still be processing');
+      setStatusMessage("Transcription completed! Medical analysis is still processing...");
+    }
+  };
+
   // 📤 Upload & Transcribe
   const handleTranscription = async () => {
     if (!audioFile) {
@@ -188,8 +248,11 @@ export default function Transcribe() {
           
           if (transcriptionData.status === 'completed') {
             setTranscript(transcriptionData.transcript || "Transcription completed successfully.");
-            setStatusMessage("Transcription completed!");
+            setStatusMessage("Transcription completed! Analyzing medical content...");
             setError("");
+            
+            // Step 3️⃣ Poll for medical analysis (runs asynchronously after transcription)
+            pollForMedicalAnalysis(uploadResult.fileId);
             break;
           } else if (transcriptionData.status === 'failed') {
             throw new Error('Transcription job failed');
@@ -546,10 +609,16 @@ export default function Transcribe() {
         <Card sx={{ mt: 3 }}>
           <CardContent>
             <Alert severity="info">
-              <Typography variant="body2">
-                🔄 Medical analysis is being processed by AI. This may take 1-2 minutes. 
-                Refresh the page to see the insights once processing is complete.
+              <Typography variant="body2" mb={2}>
+                🔄 Medical analysis is being processed by AI. This may take 1-2 minutes.
               </Typography>
+              <Button 
+                variant="outlined" 
+                size="small"
+                onClick={() => window.location.reload()}
+              >
+                Refresh to Check Status
+              </Button>
             </Alert>
           </CardContent>
         </Card>
