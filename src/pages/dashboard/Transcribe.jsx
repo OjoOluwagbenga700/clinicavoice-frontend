@@ -9,6 +9,7 @@ import {
   TextField,
   Stack,
   Alert,
+  Chip,
 } from "@mui/material";
 import MicIcon from "@mui/icons-material/Mic";
 import StopIcon from "@mui/icons-material/Stop";
@@ -31,6 +32,7 @@ export default function Transcribe() {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState("");
+  const [medicalAnalysis, setMedicalAnalysis] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const { id } = useParams();
@@ -319,6 +321,12 @@ export default function Transcribe() {
         } else {
           setError("No transcript content found in this report");
         }
+        
+        // Load medical analysis if available
+        if (report.medicalAnalysis) {
+          console.log("Medical analysis found:", report.medicalAnalysis);
+          setMedicalAnalysis(report.medicalAnalysis);
+        }
       } catch (err) {
         console.error("Failed to load transcript:", err);
         setError("Failed to load transcript. Please try again.");
@@ -527,6 +535,105 @@ export default function Transcribe() {
             >
               {t("save_transcript")}
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Medical Analysis Section */}
+      {medicalAnalysis && (
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Typography variant="h6" color="primary" mb={2}>
+              🏥 AI Medical Insights
+            </Typography>
+            
+            {/* Summary */}
+            <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+              <Typography variant="subtitle2" fontWeight="bold" mb={1}>
+                Analysis Summary
+              </Typography>
+              <Stack direction="row" spacing={3}>
+                <Typography variant="body2">
+                  📊 <strong>{medicalAnalysis.summary?.totalEntities || 0}</strong> medical entities detected
+                </Typography>
+                <Typography variant="body2">
+                  🔒 <strong>{medicalAnalysis.summary?.totalPHI || 0}</strong> PHI items identified
+                </Typography>
+                <Typography variant="body2">
+                  📅 Analyzed: {medicalAnalysis.summary?.analyzedAt ? new Date(medicalAnalysis.summary.analyzedAt).toLocaleString() : 'N/A'}
+                </Typography>
+              </Stack>
+            </Box>
+
+            {/* Medical Entities */}
+            {medicalAnalysis.entities && medicalAnalysis.entities.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+                  Medical Entities
+                </Typography>
+                <Stack spacing={1}>
+                  {medicalAnalysis.entities.slice(0, 10).map((entity, index) => (
+                    <Box 
+                      key={index} 
+                      sx={{ 
+                        p: 1.5, 
+                        border: '1px solid #e0e0e0', 
+                        borderRadius: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="body2" fontWeight="bold">
+                          {entity.text}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {entity.category} - {entity.type}
+                        </Typography>
+                      </Box>
+                      <Chip 
+                        label={`${(entity.confidence * 100).toFixed(0)}%`} 
+                        size="small" 
+                        color={entity.confidence > 0.9 ? 'success' : entity.confidence > 0.7 ? 'warning' : 'default'}
+                      />
+                    </Box>
+                  ))}
+                  {medicalAnalysis.entities.length > 10 && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                      ... and {medicalAnalysis.entities.length - 10} more entities
+                    </Typography>
+                  )}
+                </Stack>
+              </Box>
+            )}
+
+            {/* PHI Warning */}
+            {medicalAnalysis.phi && medicalAnalysis.phi.length > 0 && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" fontWeight="bold" mb={1}>
+                  Protected Health Information (PHI) Detected
+                </Typography>
+                <Typography variant="body2">
+                  This transcript contains {medicalAnalysis.phi.length} PHI items. 
+                  Ensure proper handling according to HIPAA compliance requirements.
+                </Typography>
+              </Alert>
+            )}
+
+            {/* Categories */}
+            {medicalAnalysis.summary?.categories && medicalAnalysis.summary.categories.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" fontWeight="bold" mb={1}>
+                  Categories Found:
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap">
+                  {medicalAnalysis.summary.categories.map((category, index) => (
+                    <Chip key={index} label={category} size="small" variant="outlined" />
+                  ))}
+                </Stack>
+              </Box>
+            )}
           </CardContent>
         </Card>
       )}
