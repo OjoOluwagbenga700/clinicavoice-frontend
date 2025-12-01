@@ -34,6 +34,7 @@ export default function Transcribe() {
   const [error, setError] = useState("");
   const [medicalAnalysis, setMedicalAnalysis] = useState(null);
   const [currentFileId, setCurrentFileId] = useState(null); // Track fileId for saving
+  const [patientName, setPatientName] = useState(""); // Patient name for the transcription
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const { id } = useParams();
@@ -300,6 +301,11 @@ export default function Transcribe() {
       return;
     }
 
+    if (!patientName || patientName.trim() === "") {
+      setError("Please enter a patient name before saving.");
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
@@ -325,7 +331,7 @@ export default function Transcribe() {
               transcript: transcript, // Keep both for compatibility
               summary: transcript.substring(0, 100) + '...',
               status: 'completed',
-              patientName: 'Patient', // TODO: Add patient selection
+              patientName: patientName.trim(),
               // Medical analysis is already in the record, no need to send it
             },
             headers: {
@@ -349,7 +355,7 @@ export default function Transcribe() {
               content: transcript,
               summary: transcript.substring(0, 100) + '...',
               status: 'completed',
-              patientName: 'Patient', // TODO: Add patient selection
+              patientName: patientName.trim(),
               medicalAnalysis: medicalAnalysis // Include medical analysis if available
             },
             headers: {
@@ -415,6 +421,7 @@ export default function Transcribe() {
         // Set the transcript from the report content
         if (report.content || report.transcript) {
           setTranscript(report.content || report.transcript);
+          setPatientName(report.patientName || ""); // Load patient name
           setStatusMessage(`Loaded transcript for ${report.patientName || 'patient'}`);
         } else {
           setError("No transcript content found in this report");
@@ -618,19 +625,37 @@ export default function Transcribe() {
             <Typography variant="h6" color="primary" mb={2}>
               {t("transcript")}
             </Typography>
+            
+            {/* Patient Name Input */}
+            <TextField
+              fullWidth
+              label="Patient Name *"
+              placeholder="Enter patient's full name"
+              value={patientName}
+              onChange={(e) => setPatientName(e.target.value)}
+              variant="outlined"
+              sx={{ mb: 2 }}
+              helperText="Required: Enter the patient's name for this transcription"
+              required
+            />
+            
+            {/* Transcript Text Area */}
             <TextField
               fullWidth
               multiline
               minRows={8}
+              label="Transcript"
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
               variant="outlined"
             />
+            
             <Button
               variant="contained"
               color="success"
               startIcon={<SaveIcon />}
               onClick={saveTranscript}
+              disabled={!patientName || patientName.trim() === ""}
               sx={{ mt: 2 }}
             >
               {t("save_transcript")}
