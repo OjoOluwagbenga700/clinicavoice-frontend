@@ -284,12 +284,50 @@ export default function Transcribe() {
   };
 
   useEffect(() => {
-    if (id) {
-      console.log("Load transcription for report:", id);
-      // Fetch or highlight the transcription here
-      // Mock loading transcript for demonstration
-      setTranscript("This is a sample transcript for report " + id);
-    }
+    const loadExistingTranscript = async () => {
+      if (!id) return;
+      
+      try {
+        console.log("Loading transcription for report:", id);
+        setLoading(true);
+        setError("");
+        
+        // Import fetchAuthSession for authentication
+        const { fetchAuthSession } = await import('aws-amplify/auth');
+        const session = await fetchAuthSession();
+        const { get } = await import('aws-amplify/api');
+        
+        const restOperation = get({
+          apiName: "ClinicaVoiceAPI",
+          path: `/reports/${id}`,
+          options: {
+            headers: {
+              Authorization: `Bearer ${session.tokens.idToken.toString()}`
+            }
+          }
+        });
+        
+        const response = await restOperation.response;
+        const report = await response.body.json();
+        
+        console.log("Loaded report:", report);
+        
+        // Set the transcript from the report content
+        if (report.content || report.transcript) {
+          setTranscript(report.content || report.transcript);
+          setStatusMessage(`Loaded transcript for ${report.patientName || 'patient'}`);
+        } else {
+          setError("No transcript content found in this report");
+        }
+      } catch (err) {
+        console.error("Failed to load transcript:", err);
+        setError("Failed to load transcript. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadExistingTranscript();
   }, [id]);
 
   // Handle file passed from upload modal (Requirement 14.2, 14.5)
