@@ -226,7 +226,7 @@ export default function Transcribe() {
     }
   };
 
-  // 💾 Save transcript to cloud (optional extension)
+  // 💾 Save transcript as a report
   const saveTranscript = async () => {
     if (!transcript || transcript.trim() === "") {
       setError("Cannot save empty transcript. Please add content first.");
@@ -236,13 +236,37 @@ export default function Transcribe() {
     try {
       setLoading(true);
       setError("");
+      setStatusMessage("Saving transcript...");
+      
+      // Import fetchAuthSession for authentication
+      const { fetchAuthSession } = await import('aws-amplify/auth');
+      const session = await fetchAuthSession();
+      
       const response = await post({
         apiName: "ClinicaVoiceAPI",
-        path: "/save-transcript",
-        options: { body: { transcript } },
+        path: "/reports",
+        options: { 
+          body: {
+            type: 'transcription',
+            content: transcript,
+            summary: transcript.substring(0, 100) + '...',
+            status: 'completed',
+            patientName: 'Patient', // TODO: Add patient selection
+          },
+          headers: {
+            Authorization: `Bearer ${session.tokens.idToken.toString()}`,
+            'Content-Type': 'application/json'
+          }
+        },
       }).response;
+      
       const data = await response.body.json();
-      setStatusMessage(data.message || t("transcript_saved"));
+      setStatusMessage("Transcript saved successfully!");
+      
+      // Navigate to reports page after successful save
+      setTimeout(() => {
+        navigate('/dashboard/reports');
+      }, 1500);
     } catch (error) {
       console.error("Save failed:", error);
       // Enhanced save error handling (Requirement 6.5)
