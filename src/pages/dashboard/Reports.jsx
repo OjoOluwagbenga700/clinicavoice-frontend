@@ -42,9 +42,12 @@ export default function Reports() {
         // Fetch reports from backend API
         // The backend will filter based on user role automatically
         const data = await fetchReports();
+        console.log('📊 Reports loaded:', data);
+        console.log('📊 Number of reports:', data?.length || 0);
+        
         setReports(data || []);
       } catch (err) {
-        console.error('Failed to load reports:', err);
+        console.error('❌ Failed to load reports:', err);
         setError('Failed to load reports. Please try again later.');
         setReports([]);
       } finally {
@@ -57,9 +60,14 @@ export default function Reports() {
 
   // Filter reports by patient name or summary (Requirement 11.2)
   const filteredReports = reports.filter(
-    (r) =>
-      r.patient.toLowerCase().includes(search.toLowerCase()) ||
-      r.summary.toLowerCase().includes(search.toLowerCase())
+    (r) => {
+      const patient = r.patient || r.patientName || '';
+      const summary = r.summary || r.content || '';
+      return (
+        patient.toLowerCase().includes(search.toLowerCase()) ||
+        summary.toLowerCase().includes(search.toLowerCase())
+      );
+    }
   );
 
   const handleOpenTranscription = (reportId) => {

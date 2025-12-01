@@ -20,7 +20,7 @@ const samplePatient = {
 export default function TemplateBuilder() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isClinician, loading: roleLoading } = useUserRole();
+  const { userRole, isClinician, loading: roleLoading } = useUserRole();
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [editorContent, setEditorContent] = useState("");
@@ -66,10 +66,10 @@ export default function TemplateBuilder() {
       }
     };
 
-    if (!roleLoading) {
+    if (!roleLoading && userRole) {
       loadTemplates();
     }
-  }, [roleLoading, isClinician]);
+  }, [roleLoading, userRole]); // Fixed: use userRole instead of isClinician function
 
   const handleTemplateChange = (id) => {
     const temp = templates.find(t => t.id === id);
