@@ -36,7 +36,7 @@ import {
 export default function DashboardOverview() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isClinician, isPatient, loading: roleLoading } = useUserRole();
+  const { userRole, isClinician, isPatient, loading: roleLoading } = useUserRole();
   const [stats, setStats] = useState({});
   const [activityChart, setActivityChart] = useState([]);
   const [recentNotes, setRecentNotes] = useState([]);
@@ -79,10 +79,10 @@ export default function DashboardOverview() {
     }
     
     // Only fetch data once role is loaded
-    if (!roleLoading) {
+    if (!roleLoading && userRole) {
       fetchData();
     }
-  }, [isClinician, isPatient, roleLoading]);
+  }, [userRole, roleLoading]); // Fixed: use userRole instead of function references
 
   const handleNewTranscription = () => {
     navigate("/dashboard/transcribe");
