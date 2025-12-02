@@ -2,37 +2,37 @@
   "api_gateway_endpoint": {
     "sensitive": false,
     "type": "string",
-    "value": "https://hlakr36667.execute-api.us-east-1.amazonaws.com/prod"
+    "value": "https://vmui30onul.execute-api.us-east-1.amazonaws.com/prod"
   },
   "api_gateway_id": {
     "sensitive": false,
     "type": "string",
-    "value": "hlakr36667"
+    "value": "vmui30onul"
   },
   "api_gateway_url": {
     "sensitive": false,
     "type": "string",
-    "value": "https://hlakr36667.execute-api.us-east-1.amazonaws.com/prod"
+    "value": "https://vmui30onul.execute-api.us-east-1.amazonaws.com/prod"
   },
   "cognito_identity_pool_id": {
     "sensitive": false,
     "type": "string",
-    "value": "us-east-1:99bcaf64-3368-4a4a-ba8a-70001c52f83b"
+    "value": "us-east-1:de98da50-f40e-441e-8f92-dbe7d29f1448"
   },
   "cognito_user_pool_arn": {
     "sensitive": false,
     "type": "string",
-    "value": "arn:aws:cognito-idp:us-east-1:969446871231:userpool/us-east-1_uwfPcx3vS"
+    "value": "arn:aws:cognito-idp:us-east-1:969446871231:userpool/us-east-1_m1MFTcjYB"
   },
   "cognito_user_pool_client_id": {
     "sensitive": false,
     "type": "string",
-    "value": "4ub09lr312odkpiqb75kfr891d"
+    "value": "4ppugsq367onvdtj9a22p7c77k"
   },
   "cognito_user_pool_id": {
     "sensitive": false,
     "type": "string",
-    "value": "us-east-1_uwfPcx3vS"
+    "value": "us-east-1_m1MFTcjYB"
   },
   "frontend_config": {
     "sensitive": false,
@@ -47,11 +47,11 @@
       }
     ],
     "value": {
-      "api_gateway_endpoint": "https://hlakr36667.execute-api.us-east-1.amazonaws.com/prod",
+      "api_gateway_endpoint": "https://vmui30onul.execute-api.us-east-1.amazonaws.com/prod",
       "aws_region": "us-east-1",
-      "cognito_user_pool_client_id": "4ub09lr312odkpiqb75kfr891d",
-      "cognito_user_pool_id": "us-east-1_uwfPcx3vS",
-      "s3_bucket_name": "clinicavoice-storage-prod-oupuusg9"
+      "cognito_user_pool_client_id": "4ppugsq367onvdtj9a22p7c77k",
+      "cognito_user_pool_id": "us-east-1_m1MFTcjYB",
+      "s3_bucket_name": "clinicavoice-storage-prod-wzu997gb"
     }
   },
   "lambda_function_arns": {
@@ -140,12 +140,12 @@
   "s3_bucket_arn": {
     "sensitive": false,
     "type": "string",
-    "value": "arn:aws:s3:::clinicavoice-storage-prod-oupuusg9"
+    "value": "arn:aws:s3:::clinicavoice-storage-prod-wzu997gb"
   },
   "s3_bucket_name": {
     "sensitive": false,
     "type": "string",
-    "value": "clinicavoice-storage-prod-oupuusg9"
+    "value": "clinicavoice-storage-prod-wzu997gb"
   },
   "templates_table_name": {
     "sensitive": false,
