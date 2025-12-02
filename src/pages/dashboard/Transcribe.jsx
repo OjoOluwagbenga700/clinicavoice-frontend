@@ -693,7 +693,7 @@ export default function Transcribe() {
                         Analyzed: {medicalAnalysis.summary?.analyzedAt ? new Date(medicalAnalysis.summary.analyzedAt).toLocaleString() : 'N/A'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, fontStyle: 'italic' }}>
-                        💡 Confidence scores show AI accuracy: Green (>90%) = High, Orange (70-90%) = Good, Gray (<70%) = Review needed
+                        {'💡 Confidence scores show AI accuracy: Green (>90%) = High, Orange (70-90%) = Good, Gray (<70%) = Review needed'}
                       </Typography>
                     </Stack>
                   </Box>
