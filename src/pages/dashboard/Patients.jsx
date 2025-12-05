@@ -85,13 +85,21 @@ export default function Patients() {
         sortOrder: 'desc'
       });
 
+      console.log('Fetching patients with params:', params.toString());
       const response = await apiGet(`/patients?${params.toString()}`);
+      console.log('Patients response:', response);
+      
       setPatients(response.patients || []);
       setTotalPatients(response.total || 0);
       setTotalPages(Math.ceil((response.total || 0) / patientsPerPage));
     } catch (err) {
       console.error("Error fetching patients:", err);
-      setError("Failed to load patients. Please try again.");
+      console.error("Error details:", {
+        message: err.message,
+        response: err.response,
+        stack: err.stack
+      });
+      setError(`Failed to load patients: ${err.message || 'Please try again.'}`);
     } finally {
       setLoading(false);
     }
@@ -239,7 +247,8 @@ export default function Patients() {
             startIcon={<DownloadIcon />}
             onClick={handleExportCSV}
             disabled={filteredPatients.length === 0}
-            size={{ xs: 'small', sm: 'medium' }}
+            size="medium"
+            sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
           >
             Export CSV
           </Button>
@@ -247,7 +256,8 @@ export default function Patients() {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleAddPatient}
-            size={{ xs: 'small', sm: 'medium' }}
+            size="medium"
+            sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
           >
             Add Patient
           </Button>

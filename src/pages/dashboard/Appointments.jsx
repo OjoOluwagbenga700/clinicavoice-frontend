@@ -77,20 +77,29 @@ export default function Appointments() {
       // Calculate date range based on view
       const { startDate, endDate } = getDateRange();
 
+      console.log('Fetching appointments for date range:', { startDate, endDate, view });
+
       // Fetch appointments
       const appointmentsResponse = await apiGet(
         `/appointments?startDate=${startDate}&endDate=${endDate}`
       );
+      console.log('Appointments response:', appointmentsResponse);
       setAppointments(appointmentsResponse.appointments || []);
 
       // Fetch time blocks
       const timeBlocksResponse = await apiGet(
         `/time-blocks?startDate=${startDate}&endDate=${endDate}`
       );
+      console.log('Time blocks response:', timeBlocksResponse);
       setTimeBlocks(timeBlocksResponse.timeBlocks || []);
     } catch (err) {
       console.error('Error fetching calendar data:', err);
-      setError('Failed to load calendar data. Please try again.');
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response,
+        stack: err.stack
+      });
+      setError(`Failed to load calendar data: ${err.message || 'Please try again.'}`);
     } finally {
       setLoading(false);
     }
@@ -231,7 +240,8 @@ export default function Appointments() {
           startIcon={<DownloadIcon />}
           onClick={handleExportCSV}
           disabled={appointments.length === 0}
-          size={{ xs: 'small', sm: 'medium' }}
+          size="medium"
+          sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
         >
           Export CSV
         </Button>
