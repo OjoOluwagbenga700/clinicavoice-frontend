@@ -30,9 +30,6 @@ export default function PatientCard({ patient, onClick, onInvitationSent }) {
   const [sendingInvitation, setSendingInvitation] = useState(false);
   const [invitationError, setInvitationError] = useState(null);
   
-  // Generate accessible label for the card
-  const cardAriaLabel = `Patient: ${patient.firstName} ${patient.lastName}, MRN: ${patient.mrn}, Age: ${calculateAge(patient.dateOfBirth)}, Status: ${patient.accountStatus || patient.status}`;
-
   // Calculate age from date of birth
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return null;
@@ -45,6 +42,9 @@ export default function PatientCard({ patient, onClick, onInvitationSent }) {
     }
     return age;
   };
+  
+  // Generate accessible label for the card
+  const cardAriaLabel = `Patient: ${patient.firstName} ${patient.lastName}, MRN: ${patient.mrn}, Age: ${calculateAge(patient.dateOfBirth)}, Status: ${patient.accountStatus || patient.status}`;
 
   // Get account status badge color and label
   const getAccountStatusBadge = () => {
