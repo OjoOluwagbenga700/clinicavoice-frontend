@@ -10,15 +10,30 @@ import {
   Typography,
   Box,
   CircularProgress,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { Dashboard, Mic, Description, Settings, NoteAdd, Person } from "@mui/icons-material";
+import { 
+  Dashboard, 
+  Mic, 
+  Description, 
+  Settings, 
+  NoteAdd, 
+  Person,
+  ChevronLeft,
+  ChevronRight,
+  People,
+  CalendarMonth,
+  BarChart,
+} from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useUserRole } from "../hooks/useUserRole";
 import { ROLES } from "../config/roles";
 
 const drawerWidth = 240;
+const collapsedDrawerWidth = 64;
 
-export default function Sidebar({ mobileOpen, handleDrawerToggle }) {
+export default function Sidebar({ mobileOpen, handleDrawerToggle, open = true, onToggle }) {
   const { t } = useTranslation();
   const { userRole, loading } = useUserRole();
 
@@ -49,6 +64,24 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle }) {
       roles: [ROLES.PATIENT]
     },
     { 
+      to: "/dashboard/patients", 
+      label: "Patients", 
+      icon: <People />,
+      roles: [ROLES.CLINICIAN]
+    },
+    { 
+      to: "/dashboard/appointments", 
+      label: "Appointments", 
+      icon: <CalendarMonth />,
+      roles: [ROLES.CLINICIAN]
+    },
+    { 
+      to: "/dashboard/analytics", 
+      label: "Analytics", 
+      icon: <BarChart />,
+      roles: [ROLES.CLINICIAN]
+    },
+    { 
       to: "/dashboard/templates", 
       label: t("dashboard_templates"), 
       icon: <NoteAdd />,
@@ -76,15 +109,45 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle }) {
 
   const drawerContent = (
     <Box sx={{ color: "#fff", backgroundColor: "#2E3A59", height: "100%", display: "flex", flexDirection: "column" }}>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", py: 2, borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
-        <img
-          src="/logo.jpeg"
-          alt="ClinicaVoice logo"
-          style={{ width: 36, height: 36, borderRadius: 8, marginRight: 10, objectFit: "cover" }}
-        />
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          ClinicaVoice
-        </Typography>
+      <Box sx={{ 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: open ? "space-between" : "center", 
+        py: 2, 
+        px: open ? 2 : 1,
+        borderBottom: "1px solid rgba(255,255,255,0.15)" 
+      }}>
+        {open && (
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <img
+              src="/logo.jpeg"
+              alt="ClinicaVoice logo"
+              style={{ width: 36, height: 36, borderRadius: 8, marginRight: 10, objectFit: "cover" }}
+            />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              ClinicaVoice
+            </Typography>
+          </Box>
+        )}
+        {!open && (
+          <img
+            src="/logo.jpeg"
+            alt="ClinicaVoice logo"
+            style={{ width: 36, height: 36, borderRadius: 8, objectFit: "cover" }}
+          />
+        )}
+        {open && onToggle && (
+          <IconButton 
+            onClick={onToggle} 
+            size="small"
+            sx={{ 
+              color: "rgba(255,255,255,0.7)",
+              '&:hover': { color: "#fff", backgroundColor: "rgba(255,255,255,0.1)" }
+            }}
+          >
+            <ChevronLeft />
+          </IconButton>
+        )}
       </Box>
 
       {loading ? (
@@ -96,26 +159,35 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle }) {
           {menuItems.map(({ to, label, icon }) => (
             <NavLink key={`${to}-${label}`} to={to} style={{ textDecoration: "none", color: "inherit" }}>
               {({ isActive }) => (
-                <ListItemButton
-                  sx={{
-                    px: 3,
-                    py: 1.5,
-                    color: isActive ? "#fff" : "rgba(255,255,255,0.85)",
-                    backgroundColor: isActive ? "#C62828" : "transparent",
-                    borderRadius: "12px",
-                    mx: 1,
-                    mt: 0.5,
-                    "&:hover": {
-                      backgroundColor: isActive ? "#C62828" : "rgba(255,255,255,0.08)",
-                      color: "#fff",
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ color: isActive ? "#fff" : "rgba(255,255,255,0.7)", minWidth: 36 }}>
-                    {icon}
-                  </ListItemIcon>
-                  <ListItemText primary={label} primaryTypographyProps={{ fontSize: "0.95rem", fontWeight: 500 }} />
-                </ListItemButton>
+                <Tooltip title={!open ? label : ""} placement="right" arrow>
+                  <ListItemButton
+                    sx={{
+                      px: open ? 3 : 1,
+                      py: 1.5,
+                      color: isActive ? "#fff" : "rgba(255,255,255,0.85)",
+                      backgroundColor: isActive ? "#C62828" : "transparent",
+                      borderRadius: "12px",
+                      mx: 1,
+                      mt: 0.5,
+                      justifyContent: open ? "flex-start" : "center",
+                      "&:hover": {
+                        backgroundColor: isActive ? "#C62828" : "rgba(255,255,255,0.08)",
+                        color: "#fff",
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ 
+                      color: isActive ? "#fff" : "rgba(255,255,255,0.7)", 
+                      minWidth: open ? 36 : 'auto',
+                      justifyContent: "center"
+                    }}>
+                      {icon}
+                    </ListItemIcon>
+                    {open && (
+                      <ListItemText primary={label} primaryTypographyProps={{ fontSize: "0.95rem", fontWeight: 500 }} />
+                    )}
+                  </ListItemButton>
+                </Tooltip>
               )}
             </NavLink>
           ))}
@@ -124,12 +196,28 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle }) {
 
       <Divider sx={{ backgroundColor: "rgba(255,255,255,0.15)", my: 1 }} />
 
-      <Box sx={{ p: 2, textAlign: "center" }}>
-        <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)" }}>
-          © 2025 ClinicaVoice<br />
-          {t("sidebar_secure")}
-        </Typography>
-      </Box>
+      {!open && onToggle && (
+        <Box sx={{ p: 1, textAlign: "center" }}>
+          <IconButton 
+            onClick={onToggle}
+            sx={{ 
+              color: "rgba(255,255,255,0.7)",
+              '&:hover': { color: "#fff", backgroundColor: "rgba(255,255,255,0.1)" }
+            }}
+          >
+            <ChevronRight />
+          </IconButton>
+        </Box>
+      )}
+
+      {open && (
+        <Box sx={{ p: 2, textAlign: "center" }}>
+          <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)" }}>
+            © 2025 ClinicaVoice<br />
+            {t("sidebar_secure")}
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 
@@ -154,7 +242,12 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle }) {
         variant="permanent"
         sx={{
           display: { xs: "none", sm: "block" },
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+          "& .MuiDrawer-paper": { 
+            boxSizing: "border-box", 
+            width: open ? drawerWidth : collapsedDrawerWidth,
+            transition: 'width 0.3s ease',
+            overflowX: 'hidden',
+          },
         }}
         open
       >

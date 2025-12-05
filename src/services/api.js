@@ -281,3 +281,49 @@ export async function fetchPatientRecentReports() {
     throw error;
   }
 }
+
+/**
+ * Fetches upcoming appointments for patients (Requirements 16.1, 16.2, 16.3)
+ * @returns {Promise<Array>} Array of upcoming appointments with date, time, clinician name, and type
+ */
+export async function fetchPatientUpcomingAppointments() {
+  try {
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Fetch appointments starting from today
+    return await apiGet(`/appointments?startDate=${today}&status=scheduled,confirmed`);
+  } catch (error) {
+    console.error('Failed to fetch patient upcoming appointments:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches appointment history for patients (Requirements 17.1, 17.2, 17.3, 17.4, 17.5)
+ * Returns past completed appointments in chronological order (most recent first)
+ * @returns {Promise<Array>} Array of past appointments with date, clinician name, status, and transcription links
+ */
+export async function fetchPatientAppointmentHistory() {
+  try {
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Fetch appointments before today with completed status (Requirement 17.4)
+    const response = await apiGet(`/appointments?endDate=${today}&status=completed`);
+    
+    // Sort in chronological order - most recent first (Requirement 17.1)
+    const appointments = response.appointments || [];
+    appointments.sort((a, b) => {
+      const dateCompare = b.date.localeCompare(a.date);
+      if (dateCompare !== 0) return dateCompare;
+      // If same date, sort by time
+      return (b.time || '').localeCompare(a.time || '');
+    });
+    
+    return { appointments };
+  } catch (error) {
+    console.error('Failed to fetch patient appointment history:', error);
+    throw error;
+  }
+}

@@ -48,7 +48,13 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
           aws_dynamodb_table.reports.arn,
           "${aws_dynamodb_table.reports.arn}/index/*",
           aws_dynamodb_table.templates.arn,
-          "${aws_dynamodb_table.templates.arn}/index/*"
+          "${aws_dynamodb_table.templates.arn}/index/*",
+          aws_dynamodb_table.patients.arn,
+          "${aws_dynamodb_table.patients.arn}/index/*",
+          aws_dynamodb_table.appointments.arn,
+          "${aws_dynamodb_table.appointments.arn}/index/*",
+          aws_dynamodb_table.timeblocks.arn,
+          "${aws_dynamodb_table.timeblocks.arn}/index/*"
         ]
       }
     ]
@@ -243,6 +249,69 @@ resource "aws_iam_role_policy" "lambda_invoke" {
           "lambda:InvokeFunction"
         ]
         Resource = "arn:aws:lambda:*:*:function:${var.project_name}-*-${var.environment}"
+      }
+    ]
+  })
+}
+
+# SES Access Policy for Lambda (for patient invitation emails)
+resource "aws_iam_role_policy" "lambda_ses" {
+  name = "${var.project_name}-lambda-ses-${var.environment}"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Cognito Access Policy for Lambda (for patient activation)
+resource "aws_iam_role_policy" "lambda_cognito" {
+  name = "${var.project_name}-lambda-cognito-${var.environment}"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminSetUserPassword",
+          "cognito-idp:AdminUpdateUserAttributes",
+          "cognito-idp:AdminGetUser"
+        ]
+        Resource = aws_cognito_user_pool.main.arn
+      }
+    ]
+  })
+}
+
+# SNS Access Policy for Lambda (for patient invitation emails)
+resource "aws_iam_role_policy" "lambda_sns" {
+  name = "${var.project_name}-lambda-sns-${var.environment}"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:Publish",
+          "sns:Subscribe",
+          "sns:Unsubscribe"
+        ]
+        Resource = aws_sns_topic.patient_invitations.arn
       }
     ]
   })

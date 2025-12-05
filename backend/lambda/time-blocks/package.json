@@ -1,0 +1,17 @@
+{
+  "name": "time-blocks-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function for managing time blocks",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0"
+  }
+}

@@ -1,13 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import { Box } from "@mui/material";
 
 const drawerWidth = 240;
+const collapsedDrawerWidth = 64;
 
 export default function DashboardLayout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      <Sidebar />
+      <Sidebar open={sidebarOpen} onToggle={toggleSidebar} />
 
       {/* Main content */}
       <Box
@@ -15,7 +22,8 @@ export default function DashboardLayout({ children }) {
         sx={{
           flexGrow: 1,
           p: 3,
-          ml: `${drawerWidth}px`, // offset for permanent drawer
+          ml: { xs: 0, sm: sidebarOpen ? `${drawerWidth}px` : `${collapsedDrawerWidth}px` },
+          transition: 'margin 0.3s ease',
           display: "flex",
           flexDirection: "column",
         }}

@@ -61,20 +61,22 @@ export const handler = async (event) => {
 
 /**
  * Handle /dashboard/stats endpoint
- * Returns: activePatients, recentTranscriptions, pendingReviews
+ * Returns: activePatients, recentTranscriptions, pendingReviews, 
+ *          totalActivePatients, newPatientsThisMonth, patientsNeedingFollowup
  */
 async function handleStats(userId) {
-  const command = new QueryCommand({
+  // Fetch reports for transcription stats
+  const reportsCommand = new QueryCommand({
     TableName: process.env.REPORTS_TABLE,
     IndexName: 'UserIdIndex',
     KeyConditionExpression: 'userId = :userId',
     ExpressionAttributeValues: { ':userId': userId }
   });
   
-  const result = await docClient.send(command);
-  const reports = result.Items || [];
+  const reportsResult = await docClient.send(reportsCommand);
+  const reports = reportsResult.Items || [];
   
-  // Calculate statistics
+  // Calculate transcription statistics
   const activePatients = new Set(reports.map(r => r.patientId)).size;
   
   const thirtyDaysAgo = new Date();
@@ -83,13 +85,91 @@ async function handleStats(userId) {
   
   const pendingReviews = reports.filter(r => r.status === 'pending' || r.status === 'draft').length;
   
+  // Fetch patient statistics (Requirement 18.3)
+  let totalActivePatients = 0;
+  let newPatientsThisMonth = 0;
+  let patientsNeedingFollowup = 0;
+  
+  try {
+    // Query all active patients for this clinician
+    const patientsCommand = new QueryCommand({
+      TableName: process.env.PATIENTS_TABLE,
+      IndexName: 'status-index',
+      KeyConditionExpression: 'userId = :userId AND #status = :status',
+      ExpressionAttributeNames: {
+        '#status': 'status'
+      },
+      ExpressionAttributeValues: {
+        ':userId': userId,
+        ':status': 'active'
+      }
+    });
+    
+    const patientsResult = await docClient.send(patientsCommand);
+    const patients = patientsResult.Items || [];
+    
+    totalActivePatients = patients.length;
+    
+    // Calculate new patients this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    newPatientsThisMonth = patients.filter(p => {
+      const createdAt = new Date(p.createdAt);
+      return createdAt >= startOfMonth;
+    }).length;
+    
+    // Calculate patients needing follow-up (no visit in last 6 months)
+    // Need to check appointments for each patient
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    // Query all appointments for this clinician
+    const appointmentsCommand = new QueryCommand({
+      TableName: process.env.APPOINTMENTS_TABLE,
+      IndexName: 'date-index',
+      KeyConditionExpression: 'userId = :userId',
+      ExpressionAttributeValues: {
+        ':userId': userId
+      }
+    });
+    
+    const appointmentsResult = await docClient.send(appointmentsCommand);
+    const appointments = appointmentsResult.Items || [];
+    
+    // Group appointments by patient and find last completed appointment
+    const patientLastVisit = {};
+    appointments.forEach(apt => {
+      if (apt.status === 'completed') {
+        const aptDate = new Date(apt.date);
+        if (!patientLastVisit[apt.patientId] || aptDate > patientLastVisit[apt.patientId]) {
+          patientLastVisit[apt.patientId] = aptDate;
+        }
+      }
+    });
+    
+    // Count patients who haven't had a visit in 6+ months
+    patientsNeedingFollowup = patients.filter(p => {
+      const lastVisit = patientLastVisit[p.id];
+      return !lastVisit || lastVisit < sixMonthsAgo;
+    }).length;
+    
+  } catch (error) {
+    console.error('Error fetching patient statistics:', error);
+    // Continue with default values if patient stats fail
+  }
+  
   return {
     statusCode: 200,
     headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
       activePatients, 
       recentTranscriptions, 
-      pendingReviews 
+      pendingReviews,
+      totalActivePatients,
+      newPatientsThisMonth,
+      patientsNeedingFollowup
     })
   };
 }

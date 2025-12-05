@@ -11,3 +11,13 @@ frontend_domain = "*"
 log_retention_days = 30
 enable_deletion_protection = true
 backup_retention_days = 30
+
+# Patient Invitation Settings
+# Frontend URL for activation links (update with your Amplify domain)
+frontend_url = "https://main.d2yjvvqzqvvvvv.amplifyapp.com"
+
+# SES verified email address for sending invitations
+# You can use your Gmail account here (e.g., youremail@gmail.com)
+# IMPORTANT: This email must be verified in AWS SES before use
+# See backend/terraform/ses.tf for complete setup instructions
+ses_from_email = "youremail@gmail.com"

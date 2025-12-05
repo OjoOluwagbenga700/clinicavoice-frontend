@@ -21,6 +21,7 @@ import { post } from "aws-amplify/api";
 import { uploadFile, checkTranscriptionStatus } from "../../services/uploadService";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useUserRole } from "../../hooks/useUserRole";
+import PatientSelector from "../../components/PatientSelector";
 
 export default function Transcribe() {
   const { t } = useTranslation();
@@ -35,7 +36,7 @@ export default function Transcribe() {
   const [error, setError] = useState("");
   const [medicalAnalysis, setMedicalAnalysis] = useState(null);
   const [currentFileId, setCurrentFileId] = useState(null); // Track fileId for saving
-  const [patientName, setPatientName] = useState(""); // Patient name for the transcription
+  const [selectedPatient, setSelectedPatient] = useState(null); // Selected patient object (Requirement 3.1, 3.2)
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const { id } = useParams();
@@ -302,8 +303,9 @@ export default function Transcribe() {
       return;
     }
 
-    if (!patientName || patientName.trim() === "") {
-      setError("Please enter a patient name before saving.");
+    // Requirement 3.5: Validate patient selection before saving
+    if (!selectedPatient) {
+      setError("Please select a patient before saving.");
       return;
     }
 
@@ -332,7 +334,8 @@ export default function Transcribe() {
               transcript: transcript, // Keep both for compatibility
               summary: transcript.substring(0, 100) + '...',
               status: 'completed',
-              patientName: patientName.trim(),
+              patientId: selectedPatient.id, // Requirement 3.2: Store patientId
+              patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`, // Keep for backward compatibility
               // Medical analysis is already in the record, no need to send it
             },
             headers: {
@@ -356,7 +359,8 @@ export default function Transcribe() {
               content: transcript,
               summary: transcript.substring(0, 100) + '...',
               status: 'completed',
-              patientName: patientName.trim(),
+              patientId: selectedPatient.id, // Requirement 3.2: Store patientId
+              patientName: `${selectedPatient.firstName} ${selectedPatient.lastName}`, // Keep for backward compatibility
               medicalAnalysis: medicalAnalysis // Include medical analysis if available
             },
             headers: {
@@ -422,8 +426,37 @@ export default function Transcribe() {
         // Set the transcript from the report content
         if (report.content || report.transcript) {
           setTranscript(report.content || report.transcript);
-          setPatientName(report.patientName || ""); // Load patient name
-          setStatusMessage(`Loaded transcript for ${report.patientName || 'patient'}`);
+          
+          // Requirement 3.3: Load patient information if available
+          if (report.patientId) {
+            // If we have patientId, fetch the full patient object
+            try {
+              const { get } = await import('aws-amplify/api');
+              const patientOperation = get({
+                apiName: "ClinicaVoiceAPI",
+                path: `/patients/${report.patientId}`,
+                options: {
+                  headers: {
+                    Authorization: `Bearer ${session.tokens.idToken.toString()}`
+                  }
+                }
+              });
+              
+              const patientResponse = await patientOperation.response;
+              const patientData = await patientResponse.body.json();
+              setSelectedPatient(patientData.patient || patientData);
+              setStatusMessage(`Loaded transcript for ${patientData.patient?.firstName || patientData.firstName} ${patientData.patient?.lastName || patientData.lastName}`);
+            } catch (patientErr) {
+              console.error("Failed to load patient:", patientErr);
+              // Fallback to patientName if patient fetch fails
+              setStatusMessage(`Loaded transcript for ${report.patientName || 'patient'}`);
+            }
+          } else if (report.patientName) {
+            // Fallback for old records without patientId
+            setStatusMessage(`Loaded transcript for ${report.patientName}`);
+          } else {
+            setStatusMessage("Loaded transcript");
+          }
         } else {
           setError("No transcript content found in this report");
         }
@@ -630,18 +663,30 @@ export default function Transcribe() {
                   {t("transcript")}
                 </Typography>
                 
-                {/* Patient Name Input */}
-                <TextField
-                  fullWidth
-                  label="Patient Name *"
-                  placeholder="Enter patient's full name"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  variant="outlined"
-                  sx={{ mb: 2 }}
-                  helperText="Required: Enter the patient's name for this transcription"
-                  required
-                />
+                {/* Patient Selector - Requirement 3.1, 3.4 */}
+                <Box sx={{ mb: 2 }}>
+                  <PatientSelector
+                    value={selectedPatient}
+                    onChange={setSelectedPatient}
+                    required={true}
+                    label="Patient *"
+                    placeholder="Search by name or MRN"
+                    helperText="Required: Select the patient for this transcription"
+                    error={error && !selectedPatient ? "Patient selection is required" : null}
+                  />
+                  
+                  {/* Display selected patient info - Requirement 3.3 */}
+                  {selectedPatient && (
+                    <Box sx={{ mt: 1, p: 1.5, bgcolor: '#e3f2fd', borderRadius: 1 }}>
+                      <Typography variant="body2" fontWeight={500}>
+                        Selected: {selectedPatient.firstName} {selectedPatient.lastName}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        MRN: {selectedPatient.mrn}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
                 
                 {/* Transcript Text Area */}
                 <TextField
@@ -659,7 +704,7 @@ export default function Transcribe() {
                   color="success"
                   startIcon={<SaveIcon />}
                   onClick={saveTranscript}
-                  disabled={!patientName || patientName.trim() === ""}
+                  disabled={!selectedPatient}
                   sx={{ mt: 2 }}
                 >
                   {t("save_transcript")}

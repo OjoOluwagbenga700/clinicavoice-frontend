@@ -53,7 +53,7 @@ resource "aws_s3_bucket_cors_configuration" "main" {
     allowed_methods = ["GET", "PUT", "POST", "DELETE", "HEAD"]
     allowed_origins = var.environment == "prod" ? [
       var.frontend_domain
-    ] : [
+      ] : [
       "http://localhost:5173",
       var.frontend_domain
     ]

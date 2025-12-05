@@ -119,11 +119,148 @@ locals {
       authorization   = "COGNITO_USER_POOLS"
       require_api_key = false
     }
-    
+
     # Upload endpoint for presigned URLs
     "upload/presign" = {
       http_method     = "POST"
       lambda_function = "upload"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+
+    # Patients endpoints
+    "patients" = {
+      http_method     = "GET"
+      lambda_function = "patients"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "patients-post" = {
+      path            = "patients"
+      http_method     = "POST"
+      lambda_function = "patients"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "patients/search" = {
+      http_method     = "POST"
+      lambda_function = "patient-search"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "patients/{id}" = {
+      http_method     = "GET"
+      lambda_function = "patients"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "patients/{id}-put" = {
+      path            = "patients/{id}"
+      http_method     = "PUT"
+      lambda_function = "patients"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "patients/{id}-delete" = {
+      path            = "patients/{id}"
+      http_method     = "DELETE"
+      lambda_function = "patients"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "patients/{id}/resend-invitation" = {
+      http_method     = "POST"
+      lambda_function = "patients"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "patients/activate" = {
+      http_method     = "POST"
+      lambda_function = "patient-activation"
+      authorization   = "NONE"
+      require_api_key = false
+    }
+
+    # Appointments endpoints
+    "appointments" = {
+      http_method     = "GET"
+      lambda_function = "appointments"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "appointments-post" = {
+      path            = "appointments"
+      http_method     = "POST"
+      lambda_function = "appointments"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "appointments/{id}" = {
+      http_method     = "GET"
+      lambda_function = "appointments"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "appointments/{id}-put" = {
+      path            = "appointments/{id}"
+      http_method     = "PUT"
+      lambda_function = "appointments"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "appointments/{id}-delete" = {
+      path            = "appointments/{id}"
+      http_method     = "DELETE"
+      lambda_function = "appointments"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "appointments/{id}/status" = {
+      http_method     = "POST"
+      lambda_function = "appointments"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+
+    # Appointment Analytics endpoint
+    "appointments/analytics" = {
+      http_method     = "GET"
+      lambda_function = "appointment-analytics"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+
+    # Time Blocks endpoints
+    "time-blocks" = {
+      http_method     = "GET"
+      lambda_function = "time-blocks"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "time-blocks-post" = {
+      path            = "time-blocks"
+      http_method     = "POST"
+      lambda_function = "time-blocks"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "time-blocks/{id}" = {
+      http_method     = "GET"
+      lambda_function = "time-blocks"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "time-blocks/{id}-put" = {
+      path            = "time-blocks/{id}"
+      http_method     = "PUT"
+      lambda_function = "time-blocks"
+      authorization   = "COGNITO_USER_POOLS"
+      require_api_key = false
+    }
+    "time-blocks/{id}-delete" = {
+      path            = "time-blocks/{id}"
+      http_method     = "DELETE"
+      lambda_function = "time-blocks"
       authorization   = "COGNITO_USER_POOLS"
       require_api_key = false
     }
@@ -191,6 +328,24 @@ resource "aws_api_gateway_resource" "upload_presign" {
   path_part   = "presign"
 }
 
+resource "aws_api_gateway_resource" "patients" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_rest_api.main.root_resource_id
+  path_part   = "patients"
+}
+
+resource "aws_api_gateway_resource" "patients_search" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.patients.id
+  path_part   = "search"
+}
+
+resource "aws_api_gateway_resource" "patients_activate" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.patients.id
+  path_part   = "activate"
+}
+
 # Create child resources under dashboard
 resource "aws_api_gateway_resource" "dashboard_stats" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -229,6 +384,54 @@ resource "aws_api_gateway_resource" "transcribe_id" {
   path_part   = "{id}"
 }
 
+resource "aws_api_gateway_resource" "patients_id" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.patients.id
+  path_part   = "{id}"
+}
+
+resource "aws_api_gateway_resource" "patients_id_resend_invitation" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.patients_id.id
+  path_part   = "resend-invitation"
+}
+
+resource "aws_api_gateway_resource" "appointments" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_rest_api.main.root_resource_id
+  path_part   = "appointments"
+}
+
+resource "aws_api_gateway_resource" "appointments_id" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.appointments.id
+  path_part   = "{id}"
+}
+
+resource "aws_api_gateway_resource" "appointments_id_status" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.appointments_id.id
+  path_part   = "status"
+}
+
+resource "aws_api_gateway_resource" "appointments_analytics" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.appointments.id
+  path_part   = "analytics"
+}
+
+resource "aws_api_gateway_resource" "time_blocks" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_rest_api.main.root_resource_id
+  path_part   = "time-blocks"
+}
+
+resource "aws_api_gateway_resource" "time_blocks_id" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.time_blocks.id
+  path_part   = "{id}"
+}
+
 # Map route keys to resource IDs
 locals {
   route_to_resource = {
@@ -250,6 +453,26 @@ locals {
     "transcribe/{id}"        = aws_api_gateway_resource.transcribe_id.id
     "transcribe/{id}-post"   = aws_api_gateway_resource.transcribe_id.id
     "upload/presign"         = aws_api_gateway_resource.upload_presign.id
+    "patients"                         = aws_api_gateway_resource.patients.id
+    "patients-post"                    = aws_api_gateway_resource.patients.id
+    "patients/search"                  = aws_api_gateway_resource.patients_search.id
+    "patients/activate"                = aws_api_gateway_resource.patients_activate.id
+    "patients/{id}"                    = aws_api_gateway_resource.patients_id.id
+    "patients/{id}-put"                = aws_api_gateway_resource.patients_id.id
+    "patients/{id}-delete"             = aws_api_gateway_resource.patients_id.id
+    "patients/{id}/resend-invitation"  = aws_api_gateway_resource.patients_id_resend_invitation.id
+    "appointments"                     = aws_api_gateway_resource.appointments.id
+    "appointments-post"                = aws_api_gateway_resource.appointments.id
+    "appointments/{id}"                = aws_api_gateway_resource.appointments_id.id
+    "appointments/{id}-put"            = aws_api_gateway_resource.appointments_id.id
+    "appointments/{id}-delete"         = aws_api_gateway_resource.appointments_id.id
+    "appointments/{id}/status"         = aws_api_gateway_resource.appointments_id_status.id
+    "appointments/analytics"           = aws_api_gateway_resource.appointments_analytics.id
+    "time-blocks"                      = aws_api_gateway_resource.time_blocks.id
+    "time-blocks-post"                 = aws_api_gateway_resource.time_blocks.id
+    "time-blocks/{id}"                 = aws_api_gateway_resource.time_blocks_id.id
+    "time-blocks/{id}-put"             = aws_api_gateway_resource.time_blocks_id.id
+    "time-blocks/{id}-delete"          = aws_api_gateway_resource.time_blocks_id.id
   }
 }
 
@@ -283,6 +506,16 @@ locals {
     "transcribe-id"          = aws_api_gateway_resource.transcribe_id.id
     "upload"                 = aws_api_gateway_resource.upload.id
     "upload-presign"         = aws_api_gateway_resource.upload_presign.id
+    "patients"                        = aws_api_gateway_resource.patients.id
+    "patients-search"                 = aws_api_gateway_resource.patients_search.id
+    "patients-activate"               = aws_api_gateway_resource.patients_activate.id
+    "patients-id"                     = aws_api_gateway_resource.patients_id.id
+    "patients-id-resend-invitation"   = aws_api_gateway_resource.patients_id_resend_invitation.id
+    "appointments"                    = aws_api_gateway_resource.appointments.id
+    "appointments-id"                 = aws_api_gateway_resource.appointments_id.id
+    "appointments-id-status"          = aws_api_gateway_resource.appointments_id_status.id
+    "time-blocks"                     = aws_api_gateway_resource.time_blocks.id
+    "time-blocks-id"                  = aws_api_gateway_resource.time_blocks_id.id
   }
 }
 

@@ -1,0 +1,19 @@
+{
+  "name": "appointment-analytics",
+  "version": "1.0.0",
+  "description": "Lambda function for appointment analytics",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --run --coverage"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0"
+  },
+  "devDependencies": {
+    "vitest": "^4.0.14"
+  }
+}

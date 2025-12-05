@@ -8,6 +8,10 @@ import Reports from "../pages/dashboard/Reports";
 import Settings from "../pages/dashboard/Settings";
 import TemplateBuilder from "../pages/dashboard/TemplateBuilder";
 import Profile from "../pages/dashboard/Profile";
+import Patients from "../pages/dashboard/Patients";
+import PatientProfile from "../pages/dashboard/PatientProfile";
+import Appointments from "../pages/dashboard/Appointments";
+import Analytics from "../pages/dashboard/Analytics";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { ROLES } from "../config/roles";
 
@@ -33,6 +37,38 @@ export default function Dashboard() {
           } 
         />
         <Route 
+          path="patients" 
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.CLINICIAN]}>
+              <Patients />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="patients/:id" 
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.CLINICIAN, ROLES.PATIENT]}>
+              <PatientProfile />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="appointments" 
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.CLINICIAN]}>
+              <Appointments />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="analytics" 
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.CLINICIAN]}>
+              <Analytics />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
           path="templates" 
           element={
             <ProtectedRoute allowedRoles={[ROLES.CLINICIAN]}>
@@ -52,7 +88,7 @@ export default function Dashboard() {
           path="profile" 
           element={
             <ProtectedRoute allowedRoles={[ROLES.PATIENT]}>
-              <Profile />
+              <PatientProfile />
             </ProtectedRoute>
           } 
         />

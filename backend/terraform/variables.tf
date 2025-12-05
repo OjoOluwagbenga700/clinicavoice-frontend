@@ -14,7 +14,7 @@ variable "environment" {
   description = "Environment (dev, staging, prod)"
   type        = string
   default     = "prod"
-  
+
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
     error_message = "Environment must be dev, staging, or prod."
@@ -43,4 +43,16 @@ variable "backup_retention_days" {
   description = "DynamoDB backup retention in days"
   type        = number
   default     = 30
+}
+
+variable "frontend_url" {
+  description = "Frontend URL for patient activation links"
+  type        = string
+  default     = "https://main.d2yjvvqzqvvvvv.amplifyapp.com"
+}
+
+variable "ses_from_email" {
+  description = "SES verified email address for sending patient invitations (can be Gmail)"
+  type        = string
+  default     = "youremail@gmail.com"
 }

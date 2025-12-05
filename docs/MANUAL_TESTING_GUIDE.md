@@ -417,6 +417,31 @@ This guide provides step-by-step instructions for manually testing the ClinicaVo
 - ✅ Pending Reviews count displayed
 - ✅ Statistics load from backend
 
+### 6.1.1 Patient Statistics Widget (Requirement 18.3)
+**Steps:**
+1. Log in as clinician
+2. Navigate to Overview page
+3. Observe the "Patient Statistics" section below the main stats cards
+4. Verify three statistics are displayed:
+   - Total Active Patients
+   - New Patients This Month
+   - Patients Needing Follow-up
+
+**Expected Results:**
+- ✅ Total Active Patients shows count of all active patients
+- ✅ New Patients This Month shows patients created in current month
+- ✅ Patients Needing Follow-up shows count with "No visit in 6+ months" label
+- ✅ Each statistic has appropriate color coding (gray, green, orange)
+- ✅ Statistics load from backend (patients and appointments tables)
+
+**Test Data Setup:**
+To properly test this feature:
+1. Create at least 5 active patients
+2. Create 2 patients in the current month
+3. Create appointments for some patients with dates older than 6 months
+4. Mark some appointments as "completed"
+5. Refresh dashboard to see updated statistics
+
 ### 6.2 Activity Chart
 **Steps:**
 1. On Overview page, observe activity chart
@@ -736,6 +761,7 @@ Use this checklist to track your testing progress:
 - [ ] Recent notes
 - [ ] Quick actions
 - [ ] Patient dashboard
+- [ ] Patient statistics widget (total active, new this month, needing follow-up)
 
 ### Other Features
 - [ ] CSV export

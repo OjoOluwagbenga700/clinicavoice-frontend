@@ -2,37 +2,42 @@
   "api_gateway_endpoint": {
     "sensitive": false,
     "type": "string",
-    "value": "https://vmui30onul.execute-api.us-east-1.amazonaws.com/prod"
+    "value": "https://mza1m0zqx0.execute-api.us-east-1.amazonaws.com/prod"
   },
   "api_gateway_id": {
     "sensitive": false,
     "type": "string",
-    "value": "vmui30onul"
+    "value": "mza1m0zqx0"
   },
   "api_gateway_url": {
     "sensitive": false,
     "type": "string",
-    "value": "https://vmui30onul.execute-api.us-east-1.amazonaws.com/prod"
+    "value": "https://mza1m0zqx0.execute-api.us-east-1.amazonaws.com/prod"
+  },
+  "appointments_table_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "clinicavoice-appointments-prod"
   },
   "cognito_identity_pool_id": {
     "sensitive": false,
     "type": "string",
-    "value": "us-east-1:de98da50-f40e-441e-8f92-dbe7d29f1448"
+    "value": "us-east-1:707b8517-d08b-400b-ab43-280d085b995d"
   },
   "cognito_user_pool_arn": {
     "sensitive": false,
     "type": "string",
-    "value": "arn:aws:cognito-idp:us-east-1:969446871231:userpool/us-east-1_m1MFTcjYB"
+    "value": "arn:aws:cognito-idp:us-east-1:969446871231:userpool/us-east-1_mv1kr0mNJ"
   },
   "cognito_user_pool_client_id": {
     "sensitive": false,
     "type": "string",
-    "value": "4ppugsq367onvdtj9a22p7c77k"
+    "value": "56v99fsrljptbkcfud3dujgukg"
   },
   "cognito_user_pool_id": {
     "sensitive": false,
     "type": "string",
-    "value": "us-east-1_m1MFTcjYB"
+    "value": "us-east-1_mv1kr0mNJ"
   },
   "frontend_config": {
     "sensitive": false,
@@ -47,11 +52,11 @@
       }
     ],
     "value": {
-      "api_gateway_endpoint": "https://vmui30onul.execute-api.us-east-1.amazonaws.com/prod",
+      "api_gateway_endpoint": "https://mza1m0zqx0.execute-api.us-east-1.amazonaws.com/prod",
       "aws_region": "us-east-1",
-      "cognito_user_pool_client_id": "4ppugsq367onvdtj9a22p7c77k",
-      "cognito_user_pool_id": "us-east-1_m1MFTcjYB",
-      "s3_bucket_name": "clinicavoice-storage-prod-wzu997gb"
+      "cognito_user_pool_client_id": "56v99fsrljptbkcfud3dujgukg",
+      "cognito_user_pool_id": "us-east-1_mv1kr0mNJ",
+      "s3_bucket_name": "clinicavoice-storage-prod-6b6eiwqr"
     }
   },
   "lambda_function_arns": {
@@ -59,10 +64,17 @@
     "type": [
       "object",
       {
+        "appointment-analytics": "string",
+        "appointments": "string",
         "comprehend-medical": "string",
         "dashboard": "string",
+        "patient-activation": "string",
+        "patient-invitation": "string",
+        "patient-search": "string",
+        "patients": "string",
         "reports": "string",
         "templates": "string",
+        "time-blocks": "string",
         "transcribe": "string",
         "transcribe-completion": "string",
         "transcribe-processor": "string",
@@ -70,10 +82,17 @@
       }
     ],
     "value": {
+      "appointment-analytics": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-appointment-analytics-prod",
+      "appointments": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-appointments-prod",
       "comprehend-medical": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-comprehend-medical-prod",
       "dashboard": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-dashboard-prod",
+      "patient-activation": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-patient-activation-prod",
+      "patient-invitation": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-patient-invitation-prod",
+      "patient-search": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-patient-search-prod",
+      "patients": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-patients-prod",
       "reports": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-reports-prod",
       "templates": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-templates-prod",
+      "time-blocks": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-time-blocks-prod",
       "transcribe": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-prod",
       "transcribe-completion": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-completion-prod",
       "transcribe-processor": "arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-processor-prod",
@@ -85,10 +104,17 @@
     "type": [
       "object",
       {
+        "appointment-analytics": "string",
+        "appointments": "string",
         "comprehend-medical": "string",
         "dashboard": "string",
+        "patient-activation": "string",
+        "patient-invitation": "string",
+        "patient-search": "string",
+        "patients": "string",
         "reports": "string",
         "templates": "string",
+        "time-blocks": "string",
         "transcribe": "string",
         "transcribe-completion": "string",
         "transcribe-processor": "string",
@@ -96,10 +122,17 @@
       }
     ],
     "value": {
+      "appointment-analytics": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-appointment-analytics-prod/invocations",
+      "appointments": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-appointments-prod/invocations",
       "comprehend-medical": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-comprehend-medical-prod/invocations",
       "dashboard": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-dashboard-prod/invocations",
+      "patient-activation": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-patient-activation-prod/invocations",
+      "patient-invitation": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-patient-invitation-prod/invocations",
+      "patient-search": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-patient-search-prod/invocations",
+      "patients": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-patients-prod/invocations",
       "reports": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-reports-prod/invocations",
       "templates": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-templates-prod/invocations",
+      "time-blocks": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-time-blocks-prod/invocations",
       "transcribe": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-prod/invocations",
       "transcribe-completion": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-completion-prod/invocations",
       "transcribe-processor": "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:969446871231:function:clinicavoice-transcribe-processor-prod/invocations",
@@ -111,10 +144,17 @@
     "type": [
       "object",
       {
+        "appointment-analytics": "string",
+        "appointments": "string",
         "comprehend-medical": "string",
         "dashboard": "string",
+        "patient-activation": "string",
+        "patient-invitation": "string",
+        "patient-search": "string",
+        "patients": "string",
         "reports": "string",
         "templates": "string",
+        "time-blocks": "string",
         "transcribe": "string",
         "transcribe-completion": "string",
         "transcribe-processor": "string",
@@ -122,15 +162,27 @@
       }
     ],
     "value": {
+      "appointment-analytics": "clinicavoice-appointment-analytics-prod",
+      "appointments": "clinicavoice-appointments-prod",
       "comprehend-medical": "clinicavoice-comprehend-medical-prod",
       "dashboard": "clinicavoice-dashboard-prod",
+      "patient-activation": "clinicavoice-patient-activation-prod",
+      "patient-invitation": "clinicavoice-patient-invitation-prod",
+      "patient-search": "clinicavoice-patient-search-prod",
+      "patients": "clinicavoice-patients-prod",
       "reports": "clinicavoice-reports-prod",
       "templates": "clinicavoice-templates-prod",
+      "time-blocks": "clinicavoice-time-blocks-prod",
       "transcribe": "clinicavoice-transcribe-prod",
       "transcribe-completion": "clinicavoice-transcribe-completion-prod",
       "transcribe-processor": "clinicavoice-transcribe-processor-prod",
       "upload": "clinicavoice-upload-prod"
     }
+  },
+  "patients_table_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "clinicavoice-patients-prod"
   },
   "reports_table_name": {
     "sensitive": false,
@@ -140,16 +192,42 @@
   "s3_bucket_arn": {
     "sensitive": false,
     "type": "string",
-    "value": "arn:aws:s3:::clinicavoice-storage-prod-wzu997gb"
+    "value": "arn:aws:s3:::clinicavoice-storage-prod-6b6eiwqr"
   },
   "s3_bucket_name": {
     "sensitive": false,
     "type": "string",
-    "value": "clinicavoice-storage-prod-wzu997gb"
+    "value": "clinicavoice-storage-prod-6b6eiwqr"
+  },
+  "sns_configuration": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "note": "string",
+        "topic_arn": "string",
+        "topic_name": "string"
+      }
+    ],
+    "value": {
+      "note": "Patients will receive email invitations via SNS when created",
+      "topic_arn": "arn:aws:sns:us-east-1:969446871231:clinicavoice-patient-invitations-prod",
+      "topic_name": "clinicavoice-patient-invitations-prod"
+    }
+  },
+  "sns_topic_arn": {
+    "sensitive": false,
+    "type": "string",
+    "value": "arn:aws:sns:us-east-1:969446871231:clinicavoice-patient-invitations-prod"
   },
   "templates_table_name": {
     "sensitive": false,
     "type": "string",
     "value": "clinicavoice-templates-prod"
+  },
+  "timeblocks_table_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "clinicavoice-timeblocks-prod"
   }
 }

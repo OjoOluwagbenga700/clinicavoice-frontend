@@ -52,6 +52,21 @@ output "templates_table_name" {
   value       = aws_dynamodb_table.templates.name
 }
 
+output "patients_table_name" {
+  description = "DynamoDB Patients Table Name"
+  value       = aws_dynamodb_table.patients.name
+}
+
+output "appointments_table_name" {
+  description = "DynamoDB Appointments Table Name"
+  value       = aws_dynamodb_table.appointments.name
+}
+
+output "timeblocks_table_name" {
+  description = "DynamoDB TimeBlocks Table Name"
+  value       = aws_dynamodb_table.timeblocks.name
+}
+
 
 
 # Frontend Configuration
@@ -70,4 +85,19 @@ output "frontend_config" {
 output "cognito_identity_pool_id" {
   description = "Cognito Identity Pool ID for S3 uploads"
   value       = aws_cognito_identity_pool.main.id
+}
+
+# SNS Outputs
+output "sns_topic_arn" {
+  description = "ARN of the SNS topic for patient invitations"
+  value       = aws_sns_topic.patient_invitations.arn
+}
+
+output "sns_configuration" {
+  description = "SNS configuration information"
+  value = {
+    topic_name = aws_sns_topic.patient_invitations.name
+    topic_arn  = aws_sns_topic.patient_invitations.arn
+    note       = "Patients will receive email invitations via SNS when created"
+  }
 }

@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import DashboardCard from "../../components/DashboardCard";
+import TodayAppointments from "../../components/TodayAppointments";
+import PatientUpcomingAppointments from "../../components/PatientUpcomingAppointments";
+import PatientAppointmentHistory from "../../components/PatientAppointmentHistory";
 import { useUserRole } from "../../hooks/useUserRole";
 import {
   fetchDashboardStats,
@@ -241,6 +244,53 @@ export default function DashboardOverview() {
                   </Grid>
                 </Grid>
 
+                {/* Patient Statistics Cards (Requirement 18.3) */}
+                <Card sx={{ p: 3, mb: 6 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>
+                    Patient Statistics
+                  </Typography>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={4}>
+                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          Total Active Patients
+                        </Typography>
+                        <Typography variant="h3" fontWeight={700} color="primary">
+                          {stats.totalActivePatients || 0}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#e8f5e9', borderRadius: 2 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          New Patients This Month
+                        </Typography>
+                        <Typography variant="h3" fontWeight={700} sx={{ color: '#2e7d32' }}>
+                          {stats.newPatientsThisMonth || 0}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Box sx={{ textAlign: 'center', p: 2, bgcolor: '#fff3e0', borderRadius: 2 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          Patients Needing Follow-up
+                        </Typography>
+                        <Typography variant="h3" fontWeight={700} sx={{ color: '#e65100' }}>
+                          {stats.patientsNeedingFollowup || 0}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          No visit in 6+ months
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Card>
+
+                {/* Today's Appointments Widget */}
+                <Box sx={{ mb: 6 }}>
+                  <TodayAppointments />
+                </Box>
+
                 {/* Activity Chart */}
                 <Card sx={{ p: 3, mb: 6 }}>
                   <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
@@ -347,6 +397,16 @@ export default function DashboardOverview() {
                     All your health information is securely stored and managed by your healthcare provider.
                   </Typography>
                 </Card>
+
+                {/* Upcoming Appointments Section (Requirements 16.1, 16.2, 16.3, 16.4) */}
+                <Box sx={{ mb: 6 }}>
+                  <PatientUpcomingAppointments />
+                </Box>
+
+                {/* Appointment History Section (Requirements 17.1, 17.2, 17.3, 17.4, 17.5) */}
+                <Box sx={{ mb: 6 }}>
+                  <PatientAppointmentHistory />
+                </Box>
 
                 {/* Recent Reports */}
                 <Card sx={{ p: 3, mb: 6 }}>

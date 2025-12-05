@@ -7,8 +7,10 @@ locals {
       timeout     = 30
       memory_size = 256
       environment_variables = {
-        REPORTS_TABLE = aws_dynamodb_table.reports.name
-        ENVIRONMENT   = var.environment
+        REPORTS_TABLE      = aws_dynamodb_table.reports.name
+        PATIENTS_TABLE     = aws_dynamodb_table.patients.name
+        APPOINTMENTS_TABLE = aws_dynamodb_table.appointments.name
+        ENVIRONMENT        = var.environment
       }
     }
     reports = {
@@ -19,6 +21,83 @@ locals {
       environment_variables = {
         REPORTS_TABLE = aws_dynamodb_table.reports.name
         ENVIRONMENT   = var.environment
+      }
+    }
+    patients = {
+      handler     = "index.handler"
+      runtime     = "nodejs20.x"
+      timeout     = 30
+      memory_size = 256
+      environment_variables = {
+        PATIENTS_TABLE        = aws_dynamodb_table.patients.name
+        INVITATION_LAMBDA_NAME = "${var.project_name}-patient-invitation-${var.environment}"
+        ENVIRONMENT           = var.environment
+      }
+    }
+    patient-search = {
+      handler     = "index.handler"
+      runtime     = "nodejs20.x"
+      timeout     = 30
+      memory_size = 256
+      environment_variables = {
+        PATIENTS_TABLE = aws_dynamodb_table.patients.name
+        ENVIRONMENT    = var.environment
+      }
+    }
+    patient-invitation = {
+      handler     = "index.handler"
+      runtime     = "nodejs20.x"
+      timeout     = 30
+      memory_size = 256
+      environment_variables = {
+        PATIENTS_TABLE = aws_dynamodb_table.patients.name
+        FRONTEND_URL   = var.frontend_url
+        SNS_TOPIC_ARN  = aws_sns_topic.patient_invitations.arn
+        ENVIRONMENT    = var.environment
+      }
+    }
+    patient-activation = {
+      handler     = "index.handler"
+      runtime     = "nodejs20.x"
+      timeout     = 30
+      memory_size = 256
+      environment_variables = {
+        PATIENTS_TABLE = aws_dynamodb_table.patients.name
+        USER_POOL_ID   = aws_cognito_user_pool.main.id
+        ENVIRONMENT    = var.environment
+      }
+    }
+    appointments = {
+      handler     = "index.handler"
+      runtime     = "nodejs20.x"
+      timeout     = 30
+      memory_size = 256
+      environment_variables = {
+        APPOINTMENTS_TABLE = aws_dynamodb_table.appointments.name
+        PATIENTS_TABLE     = aws_dynamodb_table.patients.name
+        TIMEBLOCKS_TABLE   = aws_dynamodb_table.timeblocks.name
+        ENVIRONMENT        = var.environment
+      }
+    }
+    appointment-analytics = {
+      handler     = "index.handler"
+      runtime     = "nodejs20.x"
+      timeout     = 30
+      memory_size = 256
+      environment_variables = {
+        APPOINTMENTS_TABLE = aws_dynamodb_table.appointments.name
+        ENVIRONMENT        = var.environment
+      }
+    }
+    time-blocks = {
+      handler     = "index.handler"
+      runtime     = "nodejs20.x"
+      timeout     = 30
+      memory_size = 256
+      environment_variables = {
+        TIMEBLOCKS_TABLE   = aws_dynamodb_table.timeblocks.name
+        APPOINTMENTS_TABLE = aws_dynamodb_table.appointments.name
+        ENVIRONMENT        = var.environment
       }
     }
     templates = {
@@ -56,7 +135,7 @@ locals {
     transcribe-processor = {
       handler     = "index.handler"
       runtime     = "nodejs20.x"
-      timeout     = 900  # 15 minutes for transcription
+      timeout     = 900 # 15 minutes for transcription
       memory_size = 1024
       environment_variables = {
         REPORTS_TABLE = aws_dynamodb_table.reports.name
@@ -67,7 +146,7 @@ locals {
     comprehend-medical = {
       handler     = "index.handler"
       runtime     = "nodejs20.x"
-      timeout     = 300  # 5 minutes for medical analysis
+      timeout     = 300 # 5 minutes for medical analysis
       memory_size = 512
       environment_variables = {
         REPORTS_TABLE = aws_dynamodb_table.reports.name
@@ -80,10 +159,10 @@ locals {
       timeout     = 60
       memory_size = 512
       environment_variables = {
-        REPORTS_TABLE                = aws_dynamodb_table.reports.name
-        S3_BUCKET                    = aws_s3_bucket.main.id
-        ENVIRONMENT                  = var.environment
-        COMPREHEND_MEDICAL_FUNCTION  = "${var.project_name}-comprehend-medical-${var.environment}"
+        REPORTS_TABLE               = aws_dynamodb_table.reports.name
+        S3_BUCKET                   = aws_s3_bucket.main.id
+        ENVIRONMENT                 = var.environment
+        COMPREHEND_MEDICAL_FUNCTION = "${var.project_name}-comprehend-medical-${var.environment}"
       }
     }
   }
@@ -92,7 +171,7 @@ locals {
 # Package Lambda functions
 data "archive_file" "lambda_packages" {
   for_each = local.lambda_functions
-  
+
   type        = "zip"
   source_dir  = "${path.module}/../lambda/${each.key}"
   output_path = "${path.module}/lambda-packages/${each.key}.zip"
@@ -101,14 +180,14 @@ data "archive_file" "lambda_packages" {
 # Lambda Functions
 resource "aws_lambda_function" "functions" {
   for_each = local.lambda_functions
-  
+
   filename         = data.archive_file.lambda_packages[each.key].output_path
   function_name    = "${var.project_name}-${each.key}-${var.environment}"
-  role            = aws_iam_role.lambda_execution.arn
-  handler         = each.value.handler
-  runtime         = each.value.runtime
-  timeout         = each.value.timeout
-  memory_size     = each.value.memory_size
+  role             = aws_iam_role.lambda_execution.arn
+  handler          = each.value.handler
+  runtime          = each.value.runtime
+  timeout          = each.value.timeout
+  memory_size      = each.value.memory_size
   source_code_hash = data.archive_file.lambda_packages[each.key].output_base64sha256
 
   environment {
@@ -126,18 +205,23 @@ resource "aws_lambda_function" "functions" {
 # Lambda Functions that are called via API Gateway
 locals {
   api_lambda_functions = {
-    dashboard = local.lambda_functions.dashboard
-    reports   = local.lambda_functions.reports
-    templates = local.lambda_functions.templates
-    transcribe = local.lambda_functions.transcribe
-    upload    = local.lambda_functions.upload
+    dashboard          = local.lambda_functions.dashboard
+    reports            = local.lambda_functions.reports
+    patients           = local.lambda_functions.patients
+    patient-search     = local.lambda_functions.patient-search
+    patient-activation = local.lambda_functions.patient-activation
+    appointments       = local.lambda_functions.appointments
+    time-blocks        = local.lambda_functions.time-blocks
+    templates          = local.lambda_functions.templates
+    transcribe         = local.lambda_functions.transcribe
+    upload             = local.lambda_functions.upload
   }
 }
 
 # Lambda Permissions for API Gateway (only for functions that need it)
 resource "aws_lambda_permission" "api_gateway_invoke" {
   for_each = local.api_lambda_functions
-  
+
   statement_id  = "AllowAPIGatewayInvoke-${each.key}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.functions[each.key].function_name
@@ -148,7 +232,7 @@ resource "aws_lambda_permission" "api_gateway_invoke" {
 # CloudWatch Log Groups for Lambda Functions
 resource "aws_cloudwatch_log_group" "lambda_logs" {
   for_each = local.lambda_functions
-  
+
   name              = "/aws/lambda/${aws_lambda_function.functions[each.key].function_name}"
   retention_in_days = 14
 
