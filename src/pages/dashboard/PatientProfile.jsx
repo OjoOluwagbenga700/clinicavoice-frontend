@@ -308,7 +308,7 @@ export default function PatientProfile() {
         <Grid item xs={12} md={6}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <Phone as PhoneIcon color="primary" />
+              <PhoneIcon color="primary" />
               <Typography variant="h6" sx={{ color: "#2E3A59" }}>
                 Contact Information
               </Typography>
