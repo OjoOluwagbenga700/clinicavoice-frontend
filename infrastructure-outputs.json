@@ -2,17 +2,17 @@
   "api_gateway_endpoint": {
     "sensitive": false,
     "type": "string",
-    "value": "https://mza1m0zqx0.execute-api.us-east-1.amazonaws.com/prod"
+    "value": "https://oa5uhmedaj.execute-api.us-east-1.amazonaws.com/prod"
   },
   "api_gateway_id": {
     "sensitive": false,
     "type": "string",
-    "value": "mza1m0zqx0"
+    "value": "oa5uhmedaj"
   },
   "api_gateway_url": {
     "sensitive": false,
     "type": "string",
-    "value": "https://mza1m0zqx0.execute-api.us-east-1.amazonaws.com/prod"
+    "value": "https://oa5uhmedaj.execute-api.us-east-1.amazonaws.com/prod"
   },
   "appointments_table_name": {
     "sensitive": false,
@@ -22,22 +22,22 @@
   "cognito_identity_pool_id": {
     "sensitive": false,
     "type": "string",
-    "value": "us-east-1:707b8517-d08b-400b-ab43-280d085b995d"
+    "value": "us-east-1:4378ce6e-50a9-43f3-aa8a-9b09c25ddcee"
   },
   "cognito_user_pool_arn": {
     "sensitive": false,
     "type": "string",
-    "value": "arn:aws:cognito-idp:us-east-1:969446871231:userpool/us-east-1_mv1kr0mNJ"
+    "value": "arn:aws:cognito-idp:us-east-1:969446871231:userpool/us-east-1_cSlyoY7Kk"
   },
   "cognito_user_pool_client_id": {
     "sensitive": false,
     "type": "string",
-    "value": "56v99fsrljptbkcfud3dujgukg"
+    "value": "bri9u1lntlnhps6c39fcmnq88"
   },
   "cognito_user_pool_id": {
     "sensitive": false,
     "type": "string",
-    "value": "us-east-1_mv1kr0mNJ"
+    "value": "us-east-1_cSlyoY7Kk"
   },
   "frontend_config": {
     "sensitive": false,
@@ -52,11 +52,11 @@
       }
     ],
     "value": {
-      "api_gateway_endpoint": "https://mza1m0zqx0.execute-api.us-east-1.amazonaws.com/prod",
+      "api_gateway_endpoint": "https://oa5uhmedaj.execute-api.us-east-1.amazonaws.com/prod",
       "aws_region": "us-east-1",
-      "cognito_user_pool_client_id": "56v99fsrljptbkcfud3dujgukg",
-      "cognito_user_pool_id": "us-east-1_mv1kr0mNJ",
-      "s3_bucket_name": "clinicavoice-storage-prod-6b6eiwqr"
+      "cognito_user_pool_client_id": "bri9u1lntlnhps6c39fcmnq88",
+      "cognito_user_pool_id": "us-east-1_cSlyoY7Kk",
+      "s3_bucket_name": "clinicavoice-storage-prod-uulak9at"
     }
   },
   "lambda_function_arns": {
@@ -192,12 +192,12 @@
   "s3_bucket_arn": {
     "sensitive": false,
     "type": "string",
-    "value": "arn:aws:s3:::clinicavoice-storage-prod-6b6eiwqr"
+    "value": "arn:aws:s3:::clinicavoice-storage-prod-uulak9at"
   },
   "s3_bucket_name": {
     "sensitive": false,
     "type": "string",
-    "value": "clinicavoice-storage-prod-6b6eiwqr"
+    "value": "clinicavoice-storage-prod-uulak9at"
   },
   "sns_configuration": {
     "sensitive": false,
