@@ -433,14 +433,10 @@ async function createPatient(userId, body) {
       },
       preferredContactMethod: data.preferredContactMethod || 'email',
       status: 'active',
-      // Patient portal fields (will be used in later tasks)
-      cognitoUserId: null,
+      // Patient portal fields
+      // Note: cognitoUserId is omitted (not set to null) to avoid GSI issues
+      // It will be added when the patient activates their account
       accountStatus: 'pending',
-      invitationToken: null,
-      invitationSentAt: null,
-      invitationExpiresAt: null,
-      activatedAt: null,
-      lastLoginAt: null,
       // Metadata
       createdAt: now,
       updatedAt: now,
