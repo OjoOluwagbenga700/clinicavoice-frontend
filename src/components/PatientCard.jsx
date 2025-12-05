@@ -12,10 +12,10 @@ import {
 import {
   Person as PersonIcon,
   Email as EmailIcon,
-  Phone as PhoneIcon,
   Cake as CakeIcon,
   Send as SendIcon
 } from "@mui/icons-material";
+import PhoneIcon from "@mui/icons-material/Phone";
 import { apiPost } from "../services/api";
 
 /**
