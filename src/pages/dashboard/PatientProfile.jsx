@@ -157,11 +157,12 @@ export default function PatientProfile() {
         />
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
           <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate("/dashboard/patients")}
-        >
-          Back to Patients
-        </Button>
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate("/dashboard/patients")}
+          >
+            Back to Patients
+          </Button>
+        </Box>
       </Box>
     );
   }
