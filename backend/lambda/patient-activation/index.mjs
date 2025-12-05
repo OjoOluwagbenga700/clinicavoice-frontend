@@ -101,6 +101,10 @@ async function createCognitoUser(patient, password) {
         {
           Name: 'custom:user_type',
           Value: 'patient'
+        },
+        {
+          Name: 'custom:patientId',
+          Value: patient.id
         }
       ],
       MessageAction: 'SUPPRESS', // Don't send welcome email

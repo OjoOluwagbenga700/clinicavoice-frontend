@@ -33,6 +33,18 @@ resource "aws_cognito_user_pool" "main" {
     }
   }
 
+  # Custom attribute for patient ID (links Cognito user to patient record)
+  schema {
+    name                = "patientId"
+    attribute_data_type = "String"
+    mutable             = true
+
+    string_attribute_constraints {
+      min_length = 1
+      max_length = 256
+    }
+  }
+
   # Account recovery
   account_recovery_setting {
     recovery_mechanism {

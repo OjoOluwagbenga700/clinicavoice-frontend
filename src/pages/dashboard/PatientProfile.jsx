@@ -58,7 +58,8 @@ export default function PatientProfile() {
     if (!roleLoading) {
       fetchPatientProfile();
     }
-  }, [id, roleLoading, isPatient, userInfo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, roleLoading]);
 
   const fetchPatientProfile = async () => {
     setLoading(true);
